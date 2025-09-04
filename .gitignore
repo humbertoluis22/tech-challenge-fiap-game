@@ -35,6 +35,9 @@ ScaffoldingReadMe.txt
 *.nupkg
 # NuGet Symbol Packages
 *.snupkg
+# NuGet Restore Cache
+*.nuget.props
+*.nuget.targets
 
 # Others
 ~$*
@@ -52,3 +55,35 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Visual Studio local cache/options
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# VS Code settings
+.vscode/
+
+# Rider (JetBrains)
+.idea/
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# DotCover
+*.dotCover
+
+# Tye (Microservices Orchestration)
+.tye/
+
+# Local environment variables
+.env
+
+# Backup & temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
