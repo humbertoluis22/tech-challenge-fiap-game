@@ -7,7 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.1.0" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TechChallengeGame.Data\TechChallengeGame.Data.csproj" />
+    <ProjectReference Include="..\TechChallengeGame.Domain\TechChallengeGame.Domain.csproj" />
+    <ProjectReference Include="..\TechChallengeGame.Shared\TechChallengeGame.Shared.csproj" />
   </ItemGroup>
 
 </Project>
