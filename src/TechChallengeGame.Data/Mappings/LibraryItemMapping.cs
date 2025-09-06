@@ -26,6 +26,16 @@ namespace TechChallengeGame.Data.Mappings
             builder.Property(p => p.PurchasePrice).IsRequired().HasColumnType("decimal(18,2)")
                 .HasPrecision(18, 2);
 
+            builder.HasOne(li => li.UserLibrary)
+                .WithMany(ul => ul.Items)
+                .HasForeignKey(li => li.UserLibraryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(li => li.Game)
+                .WithMany(g => g.LibraryItems)
+                .HasForeignKey(li => li.GameId)
+                .OnDelete(DeleteBehavior.Restrict); 
+
             builder.ToTable("LibraryItem");
         }
     }

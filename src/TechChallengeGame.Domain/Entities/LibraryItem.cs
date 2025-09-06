@@ -15,6 +15,6 @@ namespace TechChallengeGame.Domain.Entities
 
         // EF Mapping
         public virtual Game Game { get; set; } = null!;
-        //public virtual UserLibrary UserLibrary { get; set; } = null!;
+        public virtual UserLibrary UserLibrary { get; set; } = null!;
     }
 }

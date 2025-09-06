@@ -10,7 +10,7 @@ using TecChallenge.Application.Extensions;
 
 namespace TecChallenge.Application.V1.Controllers;
 
-[Authorize(Roles = "Admin")]
+//[Authorize(Roles = "Admin")]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/games")]
 [Produces("application/json")]
@@ -44,7 +44,7 @@ public class GameController(
     /// <response code="200">Returns the requested game</response>
     /// <response code="404">Game not found</response>
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
+    //[AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<GameResponse>>> GetGameById(Guid id)

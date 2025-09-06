@@ -17,6 +17,15 @@ public static class MappingDtoExtension
             UpdatedAt = game.UpdatedAt
         };
     }
+    public static UserLibraryResponse MapToDto(this UserLibrary userLibrary)
+    {
+        return new UserLibraryResponse
+        {
+            Id = userLibrary.Id,
+            UserId = userLibrary.UserId,
+            Items = userLibrary.Items.Select(x => x.MapToDto())
+        };
+    }
 
     private static LibraryItemReponse MapToDto(this LibraryItem item)
     {

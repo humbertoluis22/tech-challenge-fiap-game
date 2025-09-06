@@ -32,11 +32,12 @@ public static class ApiConfiguration
                 options.DefaultApiVersion = new ApiVersion(1, 0);
                 options.ReportApiVersions = true;
             });
-            //.AddApiExplorer(options =>
-            //{
-            //    options.GroupNameFormat = "'v'VVV";
-            //    options.SubstituteApiVersionInUrl = true;
-            //});
+        services
+            .AddVersionedApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
 
         services.Configure<ApiBehaviorOptions>(options =>
         {

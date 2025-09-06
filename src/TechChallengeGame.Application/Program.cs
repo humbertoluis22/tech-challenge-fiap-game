@@ -8,6 +8,11 @@ using Serilog;
 using System.Globalization;
 using TecChallenge.Application.Configurations;
 using TechChallengeGame.Data.Contexts;
+using TechChallengeGame.Data.Repositories;
+using TechChallengeGame.Data.UnitOfWork;
+using TechChallengeGame.Domain.Interfaces;
+using TechChallengeGame.Domain.Notifications;
+using TechChallengeGame.Domain.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,8 +36,16 @@ builder.Services.AddLocalization();
 builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<INotifier, Notifier>();
+builder.Services.AddScoped<IGameRepository, GameRepository>();
+builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
+builder.Services.AddScoped<IUserLibraryService, UserLibraryService>();
+builder.Services.AddSwaggerConfiguration(); 
+
+builder.Services.AddHttpContextAccessor();
 
 
 // ✅ Adiciona suporte a versionamento de API
@@ -82,27 +95,11 @@ var app = builder.Build();
 
 app.UseApiConfig(app.Environment);
 
-// ✅ Agora o serviço existe
 var apiVersionDescriptionProvider =
     app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
-
 app.UseSwaggerConfig(apiVersionDescriptionProvider);
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
-        {
-            options.SwaggerEndpoint(
-                $"/swagger/{description.GroupName}/swagger.json",
-                description.GroupName.ToUpperInvariant()
-            );
-        }
-    });
-}
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

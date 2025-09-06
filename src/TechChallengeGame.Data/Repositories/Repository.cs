@@ -33,7 +33,7 @@ namespace TechChallengeGame.Data.Repositories
         {
             var query = includes.Aggregate<Expression<Func<T, object>>?, IQueryable<T>>(
                 _dbSet,
-                (current, include) => current.Include(include)
+                 (current, include) => current.Include(include)
             );
 
             query = !trackChanges ? query.AsNoTracking() : query.AsTracking();

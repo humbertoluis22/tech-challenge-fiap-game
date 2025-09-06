@@ -93,7 +93,7 @@ namespace TechChallengeGame.Domain.Services
 
                 game.IsActive = false;
 
-                gameRepository.Update(game);
+                gameRepository.Delete(game);
 
                 return await unitOfWork.CommitAsync(ct);
             }
