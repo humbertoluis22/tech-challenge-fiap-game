@@ -93,6 +93,13 @@ builder.Services.AddExceptionHandler(options =>
 
 var app = builder.Build();
 
+// ✅ Aplica as migrações automáticas ao subir a API
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 app.UseApiConfig(app.Environment);
 
 var apiVersionDescriptionProvider =
