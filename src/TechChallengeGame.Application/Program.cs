@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.Elasticsearch;
 using System.Globalization;
 using TecChallenge.Application.Configurations;
 using TechChallengeGame.Data.Contexts;
@@ -14,6 +16,7 @@ using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Domain.Notifications;
 using TechChallengeGame.Domain.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder
@@ -21,6 +24,26 @@ builder
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddEnvironmentVariables();
+
+
+// Configuração do Serilog
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .WriteTo.Console() // Mantenha para ver os logs no console do container
+    .WriteTo.Elasticsearch(
+        new ElasticsearchSinkOptions(new Uri(context.Configuration["Serilog:WriteTo:0:Args:nodeUris"]))
+        {
+            IndexFormat = context.Configuration["Serilog:WriteTo:0:Args:indexFormat"],
+            AutoRegisterTemplate = true,
+            TypeName = null,
+            MinimumLogEventLevel = LogEventLevel.Information
+        })
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+);
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -33,7 +56,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddApiConfiguration(builder.Configuration);
 builder.Services.AddLocalization();
-builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
@@ -48,7 +70,7 @@ builder.Services.AddSwaggerConfiguration();
 builder.Services.AddHttpContextAccessor();
 
 
-// ✅ Adiciona suporte a versionamento de API
+
 builder.Services.AddApiVersioning(options =>
 {
     options.AssumeDefaultVersionWhenUnspecified = true;
@@ -56,7 +78,7 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
 });
 
-// ✅ Adiciona suporte ao API Explorer (necessário para Swagger + Versionamento)
+
 builder.Services.AddVersionedApiExplorer(options =>
 {
     options.GroupNameFormat = "'v'VVV"; // v1, v2, v3...
@@ -93,7 +115,7 @@ builder.Services.AddExceptionHandler(options =>
 
 var app = builder.Build();
 
-// ✅ Aplica as migrações automáticas ao subir a API
+//  Aplica as migrações automáticas ao subir a API
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

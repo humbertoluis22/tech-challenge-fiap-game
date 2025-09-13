@@ -10,18 +10,21 @@ using TecChallenge.Application.Extensions;
 
 namespace TecChallenge.Application.V1.Controllers;
 
+
 //[Authorize(Roles = "Admin")]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/games")]
 [Produces("application/json")]
 public class GameController(
     INotifier notifier,
+    ILogger<GameController> logger,
     IHttpContextAccessor httpContextAccessor,
     IWebHostEnvironment webHostEnvironment,
     IGameRepository gameRepository,
     IGameService gameService
 ) : MainController(notifier, httpContextAccessor, webHostEnvironment)
 {
+
     /// <summary>
     /// Get all available games
     /// </summary>
@@ -32,6 +35,7 @@ public class GameController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> GetAllGames()
     {
+        logger.LogInformation("Chamando rota que recolhe todos os games!");
         var games = (await gameRepository.GetAllAsync()).Select(g => g.MapToDto());
         return CustomResponse(data: games);
     }
