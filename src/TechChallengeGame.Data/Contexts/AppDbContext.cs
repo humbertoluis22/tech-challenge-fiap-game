@@ -21,7 +21,10 @@ namespace TechChallengeGame.Data.Contexts
         public DbSet<Game> Games { get; set; }
         public DbSet<UserLibrary> UserLibraries { get; set; }
         public DbSet<LibraryItem> LibraryItems { get; set; }
-      
+        public DbSet<Promotion> Promotions { get; set; }
+        public DbSet<PromotionGame> PromotionGames { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             foreach (

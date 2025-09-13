@@ -39,4 +39,27 @@ public static class MappingDtoExtension
         };
     }
 
+    public static PromotionResponse MapToDto(this Promotion promotion)
+    {
+        return new PromotionResponse
+        {
+            Id = promotion.Id,
+            Name = promotion.Name,
+            StartDate = promotion.StartDate,
+            EndDate = promotion.EndDate,
+            GamesOnSale = promotion.GamesOnSale.Select(x => x.MapToDto())
+        };
+    }
+
+    public static PromotionGameResponse MapToDto(this PromotionGame promotionGame)
+    {
+        return new PromotionGameResponse
+        {
+            Id = promotionGame.Id,
+            PromotionId = promotionGame.PromotionId,
+            GameId = promotionGame.GameId,
+            DiscountPercentage = promotionGame.DiscountPercentage
+        };
+    }
+
 }
