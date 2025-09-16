@@ -12,7 +12,7 @@ namespace TechChallengeGame.Shared.Models.Dtos.Responses
         public Guid Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
-
+        public string Genre { get; set; } = string.Empty;
         public decimal Price { get; set; }
 
         public bool IsActive { get; set; }

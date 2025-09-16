@@ -12,6 +12,7 @@ public static class MappingDtoExtension
             Id = game.Id,
             Name = game.Name,
             Price = game.Price,
+            Genre = game.Genre,
             IsActive = game.IsActive,
             CreatedAt = game.CreatedAt,
             UpdatedAt = game.UpdatedAt

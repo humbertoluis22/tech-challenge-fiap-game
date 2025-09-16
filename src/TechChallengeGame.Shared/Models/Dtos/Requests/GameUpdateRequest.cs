@@ -20,6 +20,8 @@ namespace TechChallengeGame.Shared.Models.Dtos.Requests
         )]
         public string Name { get; set; } = string.Empty;
 
+        [Required]
+        public string Genre { get; set; } = string.Empty;
         [Required] public decimal Price { get; set; }
 
         public bool IsActive { get; set; }

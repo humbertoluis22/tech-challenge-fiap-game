@@ -34,6 +34,10 @@ namespace TechChallengeGame.Data.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")

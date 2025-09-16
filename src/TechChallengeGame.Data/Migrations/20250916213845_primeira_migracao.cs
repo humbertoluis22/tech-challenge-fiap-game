@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TechChallengeGame.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class primeira_migracao : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,6 +18,7 @@ namespace TechChallengeGame.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "VARCHAR", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "varchar(100)", nullable: false),
+                    Genre = table.Column<string>(type: "varchar(100)", nullable: false),
                     Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     ReleaseDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -47,6 +48,20 @@ namespace TechChallengeGame.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Promotion",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "VARCHAR", maxLength: 100, nullable: false),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Promotion", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserLibrary",
                 columns: table => new
                 {
@@ -56,6 +71,32 @@ namespace TechChallengeGame.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserLibrary", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PromotionGame",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    PromotionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DiscountPercentage = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PromotionGame", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PromotionGame_Game_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Game",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PromotionGame_Promotion_PromotionId",
+                        column: x => x.PromotionId,
+                        principalTable: "Promotion",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -99,6 +140,16 @@ namespace TechChallengeGame.Data.Migrations
                 name: "IX_LibraryItem_UserLibraryId",
                 table: "LibraryItem",
                 column: "UserLibraryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PromotionGame_GameId",
+                table: "PromotionGame",
+                column: "GameId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PromotionGame_PromotionId",
+                table: "PromotionGame",
+                column: "PromotionId");
         }
 
         /// <inheritdoc />
@@ -111,10 +162,16 @@ namespace TechChallengeGame.Data.Migrations
                 name: "Log");
 
             migrationBuilder.DropTable(
-                name: "Game");
+                name: "PromotionGame");
 
             migrationBuilder.DropTable(
                 name: "UserLibrary");
+
+            migrationBuilder.DropTable(
+                name: "Game");
+
+            migrationBuilder.DropTable(
+                name: "Promotion");
         }
     }
 }

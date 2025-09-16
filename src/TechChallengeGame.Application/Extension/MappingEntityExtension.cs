@@ -10,6 +10,7 @@ public static class MappingEntityExtension
         return new Game
         {
             Name = game.Name,
+            Genre = game.Genre,
             Price = game.Price
         };
     }
@@ -20,6 +21,7 @@ public static class MappingEntityExtension
         {
             Name = game.Name,
             Price = game.Price,
+            Genre = game.Genre,
             IsActive = game.IsActive
         };
     }

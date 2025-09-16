@@ -67,7 +67,7 @@ public class GameController(
         if (!games.Any())
         {
             
-            NotifyError("Nenhum jogo similar encontrado.");
+            NotifyError("No similar games found.");
             return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
 
         }
@@ -89,6 +89,12 @@ public class GameController(
     {
         logger.LogInformation("Buscando recomendações para o jogo com ID: {GameId}", id);
         var recommendations = await gameQueryRepository.GetRecommendationsAsync(id);
+        if (!recommendations.Any())
+        {
+            NotifyError("No similar games found.");
+            return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
+
+        }
         return CustomResponse(data: recommendations);
     }
 

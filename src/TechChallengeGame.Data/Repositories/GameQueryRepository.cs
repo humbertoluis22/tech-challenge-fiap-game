@@ -42,26 +42,39 @@ namespace TechChallengeGame.Data.Repositories
 
         public async Task<IEnumerable<GameResponse>> GetRecommendationsAsync(Guid gameId)
         {
+            // ETAPA 1: Buscar o jogo original para descobrir seu gênero.
+            var originalGameResponse = await _elasticClient.GetAsync<GameResponse>(gameId.ToString());
+
+            // Se o jogo original não for encontrado, retorna uma lista vazia.
+            if (!originalGameResponse.Found || string.IsNullOrWhiteSpace(originalGameResponse.Source.Genre))
+            {
+                return Enumerable.Empty<GameResponse>();
+            }
+
+            var originalGameGenre = originalGameResponse.Source.Genre;
+
+            // ETAPA 2: Buscar outros jogos com o mesmo gênero, excluindo o original.
             var response = await _elasticClient.SearchAsync<GameResponse>(s => s
                 .Query(q => q
-                    .MoreLikeThis(mlt => mlt
-                        .Like(new Like[]
-                        {
-                    // A correção final:
-                    // 1. Criamos um LikeDocument com o construtor vazio: new LikeDocument
-                    // 2. Definimos as propriedades Id e Index usando o inicializador de objeto: { ... }
-                    new Like(new LikeDocument
-                    {
-                        Index = "games",
-                        Id = gameId.ToString()
-                    })
-                        })
-                        .Fields(new[] { "description", "genre" }) // Passar o array de strings diretamente
-                        .MinTermFreq(1)
-                        .MaxQueryTerms(12)
+                    .Bool(b => b
+                        // O gênero DEVE ser o mesmo.
+                        .Filter(f => f
+                            .Term(t => t
+                                .Field("genre.keyword")
+                                .Value(originalGameGenre)
+                            )
+                        )
+                        // O ID NÃO PODE ser o do jogo original.
+                        .MustNot(mn => mn
+                            .Ids(i => i
+                                .Values(gameId.ToString())
+                            )
+                        )
                     )
                 )
+                .Size(5) // Limita a 5 recomendações
             );
+
             return response.Documents;
         }
 
@@ -81,7 +94,12 @@ namespace TechChallengeGame.Data.Repositories
             {
                 if (aggregation is StringTermsAggregate termsAgg)
                 {
-                    return termsAgg.Buckets.ToDictionary(bucket => bucket.Key, bucket => bucket.DocCount);
+                    // CORREÇÃO AQUI: Convertemos a chave para string com .ToString()
+                    var result = termsAgg.Buckets.ToDictionary(
+                        bucket => bucket.Key.ToString(), 
+                        bucket => bucket.DocCount
+                    );
+                    return result;
                 }
             }
             return null;

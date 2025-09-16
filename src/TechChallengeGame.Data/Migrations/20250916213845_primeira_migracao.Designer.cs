@@ -12,8 +12,8 @@ using TechChallengeGame.Data.Contexts;
 namespace TechChallengeGame.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250906161949_Initial")]
-    partial class Initial
+    [Migration("20250916213845_primeira_migracao")]
+    partial class primeira_migracao
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,6 +34,10 @@ namespace TechChallengeGame.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Genre")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
@@ -121,6 +125,51 @@ namespace TechChallengeGame.Data.Migrations
                     b.ToTable("Log", (string)null);
                 });
 
+            modelBuilder.Entity("TechChallengeGame.Domain.Entities.Promotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("VARCHAR");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Promotion", (string)null);
+                });
+
+            modelBuilder.Entity("TechChallengeGame.Domain.Entities.PromotionGame", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PromotionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("PromotionId");
+
+                    b.ToTable("PromotionGame", (string)null);
+                });
+
             modelBuilder.Entity("TechChallengeGame.Domain.Entities.UserLibrary", b =>
                 {
                     b.Property<Guid>("Id")
@@ -153,9 +202,33 @@ namespace TechChallengeGame.Data.Migrations
                     b.Navigation("UserLibrary");
                 });
 
+            modelBuilder.Entity("TechChallengeGame.Domain.Entities.PromotionGame", b =>
+                {
+                    b.HasOne("TechChallengeGame.Domain.Entities.Game", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TechChallengeGame.Domain.Entities.Promotion", "Promotion")
+                        .WithMany("GamesOnSale")
+                        .HasForeignKey("PromotionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("Promotion");
+                });
+
             modelBuilder.Entity("TechChallengeGame.Domain.Entities.Game", b =>
                 {
                     b.Navigation("LibraryItems");
+                });
+
+            modelBuilder.Entity("TechChallengeGame.Domain.Entities.Promotion", b =>
+                {
+                    b.Navigation("GamesOnSale");
                 });
 
             modelBuilder.Entity("TechChallengeGame.Domain.Entities.UserLibrary", b =>

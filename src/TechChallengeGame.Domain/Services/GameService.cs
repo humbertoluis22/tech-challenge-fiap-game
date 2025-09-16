@@ -42,6 +42,7 @@ namespace TechChallengeGame.Domain.Services
                         Id = model.Id,
                         Name = model.Name,
                         Price = model.Price,
+                        Genre = model.Genre,
                         IsActive = model.IsActive,
                         CreatedAt = model.CreatedAt
                     };
@@ -91,6 +92,7 @@ namespace TechChallengeGame.Domain.Services
 
                 game.Name = model.Name;
                 game.Price = model.Price;
+                game.Genre = model.Genre;
                 game.IsActive = model.IsActive;
 
                 gameRepository.Update(game);
