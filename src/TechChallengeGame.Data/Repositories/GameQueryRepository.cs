@@ -1,13 +1,12 @@
 ﻿using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Aggregations;
-using Elastic.Clients.Elasticsearch.QueryDsl;
+using Elastic.Clients.Elasticsearch.QueryDsl; // Garanta que esta linha exista!
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
-using Elastic.Clients.Elasticsearch.QueryDsl;
 
 namespace TechChallengeGame.Data.Repositories
 {
@@ -33,6 +32,8 @@ namespace TechChallengeGame.Data.Repositories
                     .MultiMatch(mm => mm
                         .Query(query)
                         .Fields(new[] { "name", "description" })
+                        .Fuzziness(new Fuzziness("AUTO")) // CORREÇÃO AQUI
+                        .Operator(Operator.And)
                     )
                 )
             );
@@ -43,27 +44,24 @@ namespace TechChallengeGame.Data.Repositories
         {
             var response = await _elasticClient.SearchAsync<GameResponse>(s => s
                 .Query(q => q
-                    .MoreLikeThis(new MoreLikeThisQuery
-                    {
-                        Like = new List<Like>
+                    .MoreLikeThis(mlt => mlt
+                        .Like(new Like[]
                         {
+                    // A correção final:
+                    // 1. Criamos um LikeDocument com o construtor vazio: new LikeDocument
+                    // 2. Definimos as propriedades Id e Index usando o inicializador de objeto: { ... }
                     new Like(new LikeDocument
                     {
                         Index = "games",
                         Id = gameId.ToString()
                     })
-                        },
-                        Fields = new Field[]
-                        {
-                    "description",
-                    "genre"
-                        },
-                        MinTermFreq = 1,
-                        MaxQueryTerms = 12
-                    })
+                        })
+                        .Fields(new[] { "description", "genre" }) // Passar o array de strings diretamente
+                        .MinTermFreq(1)
+                        .MaxQueryTerms(12)
+                    )
                 )
             );
-
             return response.Documents;
         }
 
@@ -86,7 +84,6 @@ namespace TechChallengeGame.Data.Repositories
                     return termsAgg.Buckets.ToDictionary(bucket => bucket.Key, bucket => bucket.DocCount);
                 }
             }
-
             return null;
         }
     }

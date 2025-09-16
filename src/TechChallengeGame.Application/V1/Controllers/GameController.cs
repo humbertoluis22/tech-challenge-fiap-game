@@ -64,6 +64,13 @@ public class GameController(
         // Usando o gameQueryRepository que busca do Elasticsearch
         var games = await gameQueryRepository.SearchAsync(searchTerm);
 
+        if (!games.Any())
+        {
+            
+            NotifyError("Nenhum jogo similar encontrado.");
+            return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
+
+        }
         return CustomResponse(data: games);
     }
 
