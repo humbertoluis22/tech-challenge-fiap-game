@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using Elastic.Clients.Elasticsearch;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
@@ -45,6 +46,17 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 );
 
 
+// Adicione a configuração do cliente Elasticsearch
+var elasticUri = builder.Configuration["Elasticsearch:Uri"];
+builder.Services.AddSingleton<ElasticsearchClient>(sp =>
+{
+    var settings = new ElasticsearchClientSettings(new Uri(elasticUri))
+        .DefaultIndex("games"); // Define um índice padrão para os jogos
+
+    return new ElasticsearchClient(settings);
+});
+
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(
@@ -61,6 +73,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddScoped<INotifier, Notifier>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
+builder.Services.AddScoped<IGameQueryRepository, GameQueryRepository>(); 
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();

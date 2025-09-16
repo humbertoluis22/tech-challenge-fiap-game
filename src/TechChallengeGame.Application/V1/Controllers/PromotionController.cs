@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using TecChallenge.Application.Controllers;
 using TecChallenge.Application.Extensions;
+using TecChallenge.Application.V1.Controllers;
 using TechChallengeGame.Application.Extension;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Requests;
@@ -17,6 +18,7 @@ public class PromotionController(
     INotifier notifier,
     IHttpContextAccessor httpContextAccessor,
     IWebHostEnvironment webHostEnvironment,
+    ILogger<PromotionController> logger,
     IPromotionRepository promotionRepository,
     IPromotionService promotionService
 ) : MainController(notifier, httpContextAccessor, webHostEnvironment)
@@ -30,6 +32,7 @@ public class PromotionController(
     [ProducesResponseType(typeof(Root<IEnumerable<PromotionResponse>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Root<IEnumerable<PromotionResponse>>>> GetAllPromotions()
     {
+        logger.LogInformation("Buscando promocoes !");
         var promotions = (await promotionRepository.GetAllAsync()).Select(g => g.MapToDto());
 
         return CustomResponse(data: promotions);
@@ -47,6 +50,8 @@ public class PromotionController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<PromotionResponse>>> GetPromotionById(Guid id)
     {
+        logger.LogInformation("Buscando informacoes de uma promocao especifica!");
+
         var promotion = await promotionRepository.FirstOrDefaultAsync(
             x => x.Id == id,
             includes: x => x.GamesOnSale
@@ -72,6 +77,8 @@ public class PromotionController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Root<PromotionResponse>>> AddPromotion(PromotionAddRequest model)
     {
+        logger.LogInformation("criando uma nova promocao!");
+
         if (!ModelState.IsValid)
             return CustomModelStateResponse<PromotionResponse>(ModelState);
 
@@ -106,6 +113,7 @@ public class PromotionController(
         PromotionUpdateRequest model
     )
     {
+        logger.LogInformation("Atualizando uma promocao existente!");
         if (id != model.Id)
         {
             NotifyError("The ids entered are not the same");
@@ -138,6 +146,7 @@ public class PromotionController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<PromotionResponse>>> DeletePromotion(Guid id)
     {
+        logger.LogInformation("Deletando uma promocao!");
         var result = await promotionService.DeleteAsync(id);
 
         if (result != null)
@@ -169,6 +178,8 @@ public class PromotionController(
         List<PromotionGameAddRequest> model
     )
     {
+        logger.LogInformation("Adicionando um jogo a uma promocao existente!");
+
         if (!ModelState.IsValid)
             return CustomModelStateResponse<IEnumerable<PromotionGameResponse>>(ModelState);
 
@@ -240,6 +251,7 @@ public class PromotionController(
         Guid promotionGameId
     )
     {
+        logger.LogInformation("Removendo jogo da promocao!");
         var result = await promotionService.DeletePromotionGameAsync(promotionGameId);
 
         if (result != null)

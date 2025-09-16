@@ -21,6 +21,7 @@ public class GameController(
     IHttpContextAccessor httpContextAccessor,
     IWebHostEnvironment webHostEnvironment,
     IGameRepository gameRepository,
+    IGameQueryRepository gameQueryRepository,
     IGameService gameService
 ) : MainController(notifier, httpContextAccessor, webHostEnvironment)
 {
@@ -39,6 +40,70 @@ public class GameController(
         var games = (await gameRepository.GetAllAsync()).Select(g => g.MapToDto());
         return CustomResponse(data: games);
     }
+
+
+    /// <summary>
+    /// Search for games using Elasticsearch with advanced filtering.
+    /// </summary>
+    /// <param name="searchTerm">The term to search for in game names and descriptions.</param>
+    /// <returns>A list of games that match the search criteria.</returns>
+    [HttpGet("search")] // Nova Rota: GET /v1/games/search
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> SearchGames([FromQuery] string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            // Retorna uma lista vazia ou um bad request se o termo de busca for obrigatório
+            NotifyError("Search term cannot be empty.");
+            return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
+        }
+
+        logger.LogInformation("Buscando jogos no Elasticsearch com o termo: {SearchTerm}", searchTerm);
+
+        // Usando o gameQueryRepository que busca do Elasticsearch
+        var games = await gameQueryRepository.SearchAsync(searchTerm);
+
+        return CustomResponse(data: games);
+    }
+
+    // NOVA ROTA DE RECOMENDAÇÕES ABAIXO
+
+    /// <summary>
+    /// Get similar game recommendations for a specific game using Elasticsearch.
+    /// </summary>
+    /// <param name="id">The unique identifier of the game to get recommendations for.</param>
+    /// <returns>A list of recommended games.</returns>
+    /// <response code="200">Returns the list of recommended games.</response>
+    [HttpGet("{id:guid}/recommendations")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(Root<IEnumerable<GameResponse>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> GetRecommendations(Guid id)
+    {
+        logger.LogInformation("Buscando recomendações para o jogo com ID: {GameId}", id);
+        var recommendations = await gameQueryRepository.GetRecommendationsAsync(id);
+        return CustomResponse(data: recommendations);
+    }
+
+
+    // NOVA ROTA DE AGREGAÇÕES ABAIXO
+
+    /// <summary>
+    /// Get a summary of game counts by genre from Elasticsearch.
+    /// </summary>
+    /// <returns>An aggregation of genres and their respective game counts.</returns>
+    /// <response code="200">Returns the genre summary.</response>
+    [HttpGet("genres/summary")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(Root<object>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Root<object>>> GetGenreSummary()
+    {
+        logger.LogInformation("Buscando agregação de gêneros");
+        var aggregations = await gameQueryRepository.GetGenreAggregationsAsync();
+        return CustomResponse(data: aggregations);
+    }
+
+
 
     /// <summary>
     /// Get a specific game by its identifier
@@ -62,6 +127,8 @@ public class GameController(
         return CustomResponse<GameResponse>(statusCode: HttpStatusCode.NotFound);
     }
 
+
+
     /// <summary>
     /// Create a new game
     /// </summary>
@@ -74,6 +141,8 @@ public class GameController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Root<GameResponse>>> AddGame(GameAddRequest model)
     {
+        logger.LogInformation("Realizando a criacao de um novo jogo!");
+
         if (!ModelState.IsValid)
             return CustomModelStateResponse<GameResponse>(ModelState);
 
@@ -101,6 +170,8 @@ public class GameController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<GameResponse>>> UpdateGame(Guid id, GameUpdateRequest model)
     {
+        logger.LogInformation("Realizando a atualizacao de um  jogo!");
+
         if (id != model.Id)
         {
             NotifyError("The ids entered are not the same");
@@ -132,6 +203,8 @@ public class GameController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<GameResponse>>> DeleteGame(Guid id)
     {
+        logger.LogInformation("deletando  um  jogo pelo id!");
+
         var result = await gameService.DeleteAsync(id);
 
         if (result != null)

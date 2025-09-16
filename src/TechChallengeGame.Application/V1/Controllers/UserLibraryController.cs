@@ -19,6 +19,7 @@ public class UserLibraryController(
     IHttpContextAccessor httpContextAccessor,
     IWebHostEnvironment webHostEnvironment,
     IUserLibraryRepository userLibraryRepository,
+    ILogger<UserLibraryController> logger,
     IUserLibraryService userLibraryService
     ) : MainController(notifier, httpContextAccessor, webHostEnvironment)
 {
@@ -34,6 +35,7 @@ public class UserLibraryController(
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<UserLibraryResponse>>> GetUserLibrary(Guid userId)
     {
+        logger.LogInformation("Obtendo biblioteca do usuário do banco de dados.");
         var userLibrary = await userLibraryRepository.FirstOrDefaultAsync(
             x => x.UserId == userId,
             false,
@@ -63,6 +65,7 @@ public class UserLibraryController(
         Guid userId
     )
     {
+        logger.LogInformation("Criando biblioteca do usuário no banco de dados.");
         var userLibrary = UserLibrary.Create(userId);
         var result = await userLibraryService.AddAsync(userLibrary);
 
@@ -87,6 +90,7 @@ public class UserLibraryController(
         AddGameToLibraryRequest resquest
     )
     {
+        logger.LogInformation("Adicionando jogo à biblioteca do usuário no banco de dados.");
         var result = await userLibraryService.AddGameForUser(userId, resquest.GameId);
 
         if (result != null)
@@ -114,7 +118,7 @@ public class UserLibraryController(
         Guid gameId
     )
     {
-
+        logger.LogInformation("Removendo jogo da biblioteca do usuário no banco de dados.");
         var result = await userLibraryService.DeleteGameForUser(userId, gameId);
 
         if (result != null)
