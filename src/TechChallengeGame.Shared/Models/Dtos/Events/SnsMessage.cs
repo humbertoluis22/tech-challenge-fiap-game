@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace TechChallengeGame.Application.Models.Dtos.Events;
+namespace TechChallengeGame.Shared.Models.Dtos.Events;
 
 public class SnsMessage
 {

@@ -18,6 +18,8 @@ using TechChallengeGame.Domain.Notifications;
 using TechChallengeGame.Domain.Services;
 using Amazon.SQS;
 using TechChallengeGame.Application.BackgroundServices;
+using Amazon.SimpleNotificationService;
+using TechChallengeGame.Application.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -87,6 +89,17 @@ builder.Services.AddScoped<IPromotionService, PromotionService>();
 builder.Services.AddSwaggerConfiguration(); 
 
 builder.Services.AddHttpContextAccessor();
+
+
+// Configuração da AWS SNS
+builder.Services.AddAWSService<IAmazonSimpleNotificationService>();
+
+// Registra as opções para o publisher ler do appsettings.json
+builder.Services.Configure<SnsPublisherOptions>(
+    builder.Configuration.GetSection(SnsPublisherOptions.SectionName));
+
+// Registra nossa abstração do publisher
+builder.Services.AddScoped<IEventPublisher, SnsEventPublisher>();
 
 // 1. Configuração da AWS SQS
 builder.Services.AddAWSService<IAmazonSQS>();

@@ -11,6 +11,7 @@ namespace TechChallengeGame.Domain.Interfaces
     {
         Task<bool> AddAsync(UserLibrary model, CancellationToken ct = default);
         Task<bool?> AddGameForUser(Guid userid, Guid gameId,CancellationToken ct = default);
+        Task<bool?> AddGameToLibraryFromEventAsync(Guid userId, Guid gameId, CancellationToken ct = default);
         Task<bool?> DeleteGameForUser(Guid userid, Guid gameId,CancellationToken ct = default);
 
     }

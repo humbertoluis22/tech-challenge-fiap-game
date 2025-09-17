@@ -2,8 +2,8 @@
 using Amazon.SQS.Model;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
-using TechChallengeGame.Application.Models.Dtos.Events;
 using TechChallengeGame.Domain.Interfaces;
+using TechChallengeGame.Shared.Models.Dtos.Events;
 
 namespace TechChallengeGame.Application.BackgroundServices;
 
@@ -86,7 +86,6 @@ public class CatalogEventsConsumer : BackgroundService
 
             _logger.LogInformation("Evento 'FundsDebited' recebido. CorrelationId: {CorrelationId}", fundsDebitedEvent.CorrelationId);
 
-            // Criamos um escopo para resolver dependências Scoped (como DbContext e UnitOfWork)
             using (var scope = _scopeFactory.CreateScope())
             {
                 var userLibraryService = scope.ServiceProvider.GetRequiredService<IUserLibraryService>();
@@ -95,15 +94,25 @@ public class CatalogEventsConsumer : BackgroundService
                 if (result is not true)
                 {
                     _logger.LogWarning("Falha na lógica de negócio ao processar evento para o usuário {UserId}. A mensagem será processada novamente.", fundsDebitedEvent.UserId);
-                    // Não deletamos a mensagem para que ela seja reprocessada.
-                    // ATENÇÃO: É crucial ter uma Dead-Letter Queue (DLQ) configurada na AWS para evitar loops infinitos.
                     return;
                 }
+
+                // Lógica de publicação movida para dentro do escopo
+                var eventPublisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+                var gameAddedEvent = new GameAddedToLibraryEvent
+                {
+                    UserId = fundsDebitedEvent.UserId,
+                    GameId = fundsDebitedEvent.GameId,
+                    AddedAt = DateTime.UtcNow,
+                    CorrelationId = fundsDebitedEvent.CorrelationId // Propaga o ID de correlação
+                };
+
+                await eventPublisher.PublishAsync(gameAddedEvent, stoppingToken);
+
+                _logger.LogInformation("Jogo {GameId} adicionado à biblioteca e evento 'GameAddedToLibrary' publicado.", fundsDebitedEvent.GameId);
             }
 
-            // TODO: Publicar o próximo evento da Saga ('GameAddedToLibrary') no tópico SNS.
-            _logger.LogInformation("Jogo {GameId} adicionado à biblioteca do usuário {UserId} com sucesso.", fundsDebitedEvent.GameId, fundsDebitedEvent.UserId);
-
+            // A mensagem só é deletada se tudo acima (adição no BD e publicação no SNS) ocorrer sem exceções
             await DeleteMessageFromQueue(message.ReceiptHandle, stoppingToken);
         }
         catch (JsonException jsonEx)
@@ -114,12 +123,13 @@ public class CatalogEventsConsumer : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro inesperado ao processar a mensagem {MessageId}. Ela será reprocessada.", message.MessageId);
+            // Em caso de erro (ex: falha ao publicar no SNS), a mensagem não é deletada e voltará para a fila.
         }
     }
 
     private async Task DeleteMessageFromQueue(string receiptHandle, CancellationToken ct)
     {
         await _sqsClient.DeleteMessageAsync(_options.QueueUrl, receiptHandle, ct);
-        _logger.LogInformation("Mensagem removida da fila SQS.");
+        _logger.LogInformation("Mensagem processada com sucesso e removida da fila SQS.");
     }
 }

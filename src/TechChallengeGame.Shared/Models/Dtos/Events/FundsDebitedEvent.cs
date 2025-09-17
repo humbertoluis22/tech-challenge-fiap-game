@@ -1,4 +1,4 @@
-﻿namespace TechChallengeGame.Application.Models.Dtos.Events;
+﻿namespace TechChallengeGame.Shared.Models.Dtos.Events;
 
 public class FundsDebitedEvent
 {
