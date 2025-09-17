@@ -16,6 +16,8 @@ using TechChallengeGame.Data.UnitOfWork;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Domain.Notifications;
 using TechChallengeGame.Domain.Services;
+using Amazon.SQS;
+using TechChallengeGame.Application.BackgroundServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -85,6 +87,16 @@ builder.Services.AddScoped<IPromotionService, PromotionService>();
 builder.Services.AddSwaggerConfiguration(); 
 
 builder.Services.AddHttpContextAccessor();
+
+// 1. Configuração da AWS SQS
+builder.Services.AddAWSService<IAmazonSQS>();
+
+// 2. Registra a classe de opções para o nosso consumer ler do appsettings.json
+builder.Services.Configure<SqsConsumerOptions>(
+    builder.Configuration.GetSection(SqsConsumerOptions.SectionName));
+
+// 3. Registra o consumer como um serviço que roda em background
+builder.Services.AddHostedService<CatalogEventsConsumer>();
 
 
 

@@ -94,6 +94,10 @@ namespace TechChallengeGame.Domain.Services
             }
         }
 
+        public async Task<bool?> AddGameToLibraryFromEventAsync(Guid userId, Guid gameId, CancellationToken ct = default)
+        {
+            return await AddGameForUser(userId, gameId, ct);
+        }
 
         public async Task<bool?> DeleteGameForUser(Guid userid, Guid gameId, CancellationToken ct = default)
         {
