@@ -20,6 +20,8 @@ namespace TechChallengeGame.Domain.Services
         private readonly IPromotionRepository _promotionRepository;
         private readonly IQueuePublisher _queuePublisher;
         private readonly IConfiguration _configuration;
+        private readonly IUserLibraryRepository _userLibraryRepository;
+        private readonly IUserLibraryService _userLibraryService;
 
         public TransactionService(
             INotifier notifier,
@@ -28,7 +30,10 @@ namespace TechChallengeGame.Domain.Services
             IGameRepository gameRepository,
             IPromotionRepository promotionRepository,
             IQueuePublisher queuePublisher,
+            IUserLibraryRepository userLibraryRepository,
+            IUserLibraryService userLibraryService,
             IConfiguration configuration) : base(notifier)
+
         {
             _unitOfWork = unitOfWork;
             _historyPaymentRepository = historyPaymentRepository;
@@ -36,6 +41,8 @@ namespace TechChallengeGame.Domain.Services
             _promotionRepository = promotionRepository;
             _queuePublisher = queuePublisher;
             _configuration = configuration;
+            _userLibraryRepository = userLibraryRepository;
+            _userLibraryService = userLibraryService;
         }
 
         public async Task<HistoryPayment> CreatePurchaseAsync(PurchaseRequest request, CancellationToken ct = default)
@@ -57,7 +64,7 @@ namespace TechChallengeGame.Domain.Services
 
                 if (item.PromotionGameId.HasValue)
                 {
-                    var promotionGame = await _promotionRepository.GetPromotionGameById(item.PromotionGameId.Value);
+                    var promotionGame = await _promotionRepository.FindByPromotionAndGameAsync(item.PromotionGameId.Value, item.GameId);
 
                     if (promotionGame == null)
                     {
@@ -80,7 +87,7 @@ namespace TechChallengeGame.Domain.Services
                     }
 
                     discount = promotionGame.DiscountPercentage;
-                    promotionId = promotion.Id;
+                    promotionId = promotionGame.Id;
                 }
 
                 commandGames.Add(new GamePromotion
@@ -126,13 +133,71 @@ namespace TechChallengeGame.Domain.Services
             // descomentar quando for implementar
             //foreach (var game in commandGames)
             //{
-            //game.HistoryPaymentId = historyPayment.Id;
+            //    game.HistoryPaymentId = historyPayment.Id;
             //}
 
             //var purchaseCommand = new CreatePurchaseCommand(request.UserId, commandGames);
             //var queueUrl = _configuration["SqsPublisher:QueueUrl"];
 
             //await _queuePublisher.PublishAsync(queueUrl, purchaseCommand, ct);
+
+            return historyPayment;
+        }
+
+        public async Task<HistoryPayment?> CreateRefundAsync(RefundRequest request, CancellationToken ct = default)
+        {
+            // 1. Validar se o jogo existe na biblioteca do usuário
+            var userLibrary = await _userLibraryRepository.FirstOrDefaultAsync(
+                predicate: x => x.UserId == request.UserId,
+                trackChanges: true, // Habilitamos o tracking para salvar as mudanças
+                includes: x => x.Items
+            );
+
+            if (userLibrary == null || userLibrary.Items.All(i => i.GameId != request.GameId))
+            {
+                Notify("O jogo solicitado não foi encontrado na biblioteca do usuário.");
+                return null;
+            }
+
+            // 2. Retirar o jogo da biblioteca
+            // Reutilizamos o serviço que já tem essa responsabilidade
+            var removalResult = await _userLibraryService.DeleteGameForUser(request.UserId, request.GameId, ct);
+            if (removalResult != true)
+            {
+                // Se a remoção falhar, o Notifier do UserLibraryService já terá a mensagem de erro
+                return null;
+            }
+
+            // 3. Salvar no histórico de pagamentos
+            var historyPayment = new HistoryPayment
+            {
+                Status = StatusTransaction.Finished, // Podemos finalizar, pois a ação principal já ocorreu
+                Type = TransactionType.Refund,
+                TransactionGames = new List<TransactionGame>
+                {
+                    new TransactionGame { GameId = request.GameId }
+                }
+            };
+
+            // Associa o ID do histórico ao jogo transacionado
+            foreach (var game in historyPayment.TransactionGames)
+            {
+                game.HistoryPaymentId = historyPayment.Id;
+            }
+
+            // O Unit of Work garante que as duas operações (remover da biblioteca e adicionar ao histórico)
+            // sejam salvas na mesma transação de banco de dados.
+            await _historyPaymentRepository.AddAsync(historyPayment, ct);
+
+            // O commit aqui salva tanto a remoção do jogo (feita pelo _userLibraryService)
+            // quanto a adição do novo histórico de pagamento.
+            var success = await _unitOfWork.CommitAsync(ct);
+
+            if (!success)
+            {
+                Notify("Ocorreu um erro ao salvar o histórico de devolução.");
+                return null;
+            }
 
             return historyPayment;
         }

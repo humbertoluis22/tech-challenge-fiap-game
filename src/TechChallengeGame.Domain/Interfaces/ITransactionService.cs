@@ -11,5 +11,7 @@ namespace TechChallengeGame.Domain.Interfaces
     public interface ITransactionService : IDisposable
     {
         Task<HistoryPayment> CreatePurchaseAsync(PurchaseRequest request, CancellationToken ct = default);
+        Task<HistoryPayment?> CreateRefundAsync(RefundRequest request, CancellationToken ct = default);
+
     }
 }

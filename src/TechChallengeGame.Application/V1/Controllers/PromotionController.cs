@@ -33,7 +33,7 @@ public class PromotionController(
     public async Task<ActionResult<Root<IEnumerable<PromotionResponse>>>> GetAllPromotions()
     {
         logger.LogInformation("Buscando promocoes !");
-        var promotions = (await promotionRepository.GetAllAsync()).Select(g => g.MapToDto());
+        var promotions = (await promotionRepository.GetAllWithGamesAsync()).Select(g => g.MapToDto());
 
         return CustomResponse(data: promotions);
     }

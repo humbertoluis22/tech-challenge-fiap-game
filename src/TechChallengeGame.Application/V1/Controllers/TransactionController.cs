@@ -44,12 +44,10 @@ namespace TechChallengeGame.Application.V1.Controllers
                 return CustomModelStateResponse<HistoryPaymentResponse>(ModelState);
             }
 
-            // A lógica de negócio foi movida para o serviço
             var historyPayment = await _transactionService.CreatePurchaseAsync(request);
 
             if (historyPayment is null)
             {
-                // O serviço já notificou o erro, então apenas retornamos BadRequest
                 return CustomResponse<HistoryPaymentResponse>(statusCode: HttpStatusCode.BadRequest);
             }
 
@@ -74,5 +72,36 @@ namespace TechChallengeGame.Application.V1.Controllers
             NotifyError("Transaction not found");
             return CustomResponse<HistoryPaymentResponse>(statusCode: HttpStatusCode.NotFound);
         }
+
+
+        // Adicione este novo endpoint dentro da classe TransactionController
+        /// <summary>
+        /// Creates a new refund transaction for a game.
+        /// </summary>
+        /// <param name="request">The refund request details.</param>
+        /// <returns>The created refund transaction.</returns>
+        [HttpPost("refund")]
+        [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.NotFound)]
+        public async Task<ActionResult<Root<HistoryPaymentResponse>>> Refund(RefundRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return CustomModelStateResponse<HistoryPaymentResponse>(ModelState);
+            }
+
+            var historyPayment = await _transactionService.CreateRefundAsync(request);
+
+            if (historyPayment is null)
+            {
+                // Os erros já foram adicionados ao Notifier pelo serviço
+                return CustomResponse<HistoryPaymentResponse>(statusCode: HttpStatusCode.BadRequest);
+            }
+
+            return CustomResponse(data: historyPayment.MapToDto(), statusCode: HttpStatusCode.Created);
+        }
+
     }
+
 }
