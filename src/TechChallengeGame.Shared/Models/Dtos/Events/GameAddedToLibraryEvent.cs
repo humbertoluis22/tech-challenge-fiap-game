@@ -7,4 +7,3 @@ public class GameAddedToLibraryEvent
     public DateTime AddedAt { get; set; }
     public Guid CorrelationId { get; set; } // Propagar o ID de correlação é crucial
 }
-}

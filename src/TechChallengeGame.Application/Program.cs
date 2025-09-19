@@ -85,6 +85,9 @@ builder.Services.AddScoped<IUserLibraryService, UserLibraryService>();
 builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
 builder.Services.AddScoped<IPromotionGameRepository, PromotionGameRepository>();
 builder.Services.AddScoped<IPromotionService, PromotionService>();
+builder.Services.AddScoped<IHistoryPaymentRepository, HistoryPaymentRepository>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IQueuePublisher, SqsQueuePublisher>();
 
 builder.Services.AddSwaggerConfiguration(); 
 

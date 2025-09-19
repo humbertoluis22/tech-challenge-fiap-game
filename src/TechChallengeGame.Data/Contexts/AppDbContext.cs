@@ -23,6 +23,8 @@ namespace TechChallengeGame.Data.Contexts
         public DbSet<LibraryItem> LibraryItems { get; set; }
         public DbSet<Promotion> Promotions { get; set; }
         public DbSet<PromotionGame> PromotionGames { get; set; }
+        public DbSet<HistoryPayment> HistoryPayments { get; set; }
+        public DbSet<TransactionGame> TransactionGames { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

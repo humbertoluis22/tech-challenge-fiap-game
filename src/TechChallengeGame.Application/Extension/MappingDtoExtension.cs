@@ -1,4 +1,6 @@
 ﻿using TechChallengeGame.Domain.Entities;
+using TechChallengeGame.Domain.Entities.Enums;
+using TechChallengeGame.Shared.Models.Dtos.Requests;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
 
 namespace TecChallenge.Application.Extensions;
@@ -62,5 +64,52 @@ public static class MappingDtoExtension
             DiscountPercentage = promotionGame.DiscountPercentage
         };
     }
+
+
+    public static HistoryPaymentResponse MapToDto(this HistoryPayment historyPayment)
+    {
+        return new HistoryPaymentResponse
+        {
+            Id = historyPayment.Id,
+            PaymentTransactionId = historyPayment.PaymentTransactionId,
+            Status = historyPayment.Status.ToString(),
+            Type = historyPayment.Type.ToString(),
+            CreatedAt = historyPayment.CreatedAt,
+            UpdatedAt = historyPayment.UpdatedAt,
+            TransactionGames = historyPayment.TransactionGames.Select(tg => tg.MapToDto()).ToList()
+        };
+    }
+
+    public static TransactionGameResponse MapToDto(this TransactionGame transactionGame)
+    {
+        return new TransactionGameResponse
+        {
+            HistoryPaymentId = transactionGame.HistoryPaymentId,
+            GameId = transactionGame.GameId,
+            PromotionId = transactionGame.PromotionId
+        };
+    }
+
+    public static HistoryPayment MapToEntity(this PurchaseRequest request)
+    {
+        var historyPayment = new HistoryPayment
+        {
+            Status = StatusTransaction.Started,
+            Type = TransactionType.Purchase,
+            TransactionGames = request.Games.Select(g => new TransactionGame
+            {
+                GameId = g.GameId,
+                PromotionId = g.PromotionGameId
+            }).ToList()
+        };
+
+        foreach (var game in historyPayment.TransactionGames)
+        {
+            game.HistoryPaymentId = historyPayment.Id;
+        }
+
+        return historyPayment;
+    }
+
 
 }
