@@ -144,67 +144,50 @@ namespace TechChallengeGame.Domain.Services
             return historyPayment;
         }
 
-        public async Task<HistoryPayment?> CreateRefundAsync(RefundRequest request, CancellationToken ct = default)
+
+        public async Task<bool> CreateRefundAsync(RefundRequest request, CancellationToken ct = default)
         {
-            // 1. Validar se o jogo existe na biblioteca do usuário
-            var userLibrary = await _userLibraryRepository.FirstOrDefaultAsync(
-                predicate: x => x.UserId == request.UserId,
-                trackChanges: true, // Habilitamos o tracking para salvar as mudanças
-                includes: x => x.Items
+            
+            var originalTransaction = await _historyPaymentRepository.GetByIdAsync(request.PaymentTransactionId, ct);
+
+            if (originalTransaction is null)
+            {
+                Notify("Transação de pagamento não encontrada.");
+                return false;
+            }
+
+            
+
+            // 2. Publicar as informações na fila SQS
+            var refundEvent = new RefundRequestedEvent(
+                UserId: request.UserId,
+                PaymentTransactionId: request.PaymentTransactionId
             );
 
-            if (userLibrary == null || userLibrary.Items.All(i => i.GameId != request.GameId))
+            try
             {
-                Notify("O jogo solicitado não foi encontrado na biblioteca do usuário.");
-                return null;
-            }
-
-            // 2. Retirar o jogo da biblioteca
-            // Reutilizamos o serviço que já tem essa responsabilidade
-            var removalResult = await _userLibraryService.DeleteGameForUser(request.UserId, request.GameId, ct);
-            if (removalResult != true)
-            {
-                // Se a remoção falhar, o Notifier do UserLibraryService já terá a mensagem de erro
-                return null;
-            }
-
-            // 3. Salvar no histórico de pagamentos
-            var historyPayment = new HistoryPayment
-            {
-                Status = StatusTransaction.Finished, // Podemos finalizar, pois a ação principal já ocorreu
-                Type = TransactionType.Refund,
-                TransactionGames = new List<TransactionGame>
+                var queueUrl = _configuration["SqsPublisher:QueueUrl"];
+                if (string.IsNullOrEmpty(queueUrl))
                 {
-                    new TransactionGame { GameId = request.GameId }
+                    Notify("A URL da fila SQS para publicação não está configurada.");
+                    return false;
                 }
-            };
 
-            // Associa o ID do histórico ao jogo transacionado
-            foreach (var game in historyPayment.TransactionGames)
+                await _queuePublisher.PublishAsync(queueUrl, refundEvent, ct);
+            }
+            catch (Exception ex)
             {
-                game.HistoryPaymentId = historyPayment.Id;
+                Notify($"Falha ao publicar solicitação de reembolso na fila: {ex.Message}");
+                return false;
             }
 
-            // O Unit of Work garante que as duas operações (remover da biblioteca e adicionar ao histórico)
-            // sejam salvas na mesma transação de banco de dados.
-            await _historyPaymentRepository.AddAsync(historyPayment, ct);
-
-            // O commit aqui salva tanto a remoção do jogo (feita pelo _userLibraryService)
-            // quanto a adição do novo histórico de pagamento.
-            var success = await _unitOfWork.CommitAsync(ct);
-
-            if (!success)
-            {
-                Notify("Ocorreu um erro ao salvar o histórico de devolução.");
-                return null;
-            }
-
-            return historyPayment;
+            return true;
         }
 
         public void Dispose()
         {
             GC.SuppressFinalize(this);
         }
+
     }
 }

@@ -13,6 +13,6 @@ namespace TechChallengeGame.Shared.Models.Dtos.Requests
         public Guid UserId { get; set; }
 
         [Required]
-        public Guid GameId { get; set; }
+        public Guid PaymentTransactionId  { get; set; }
     }
 }

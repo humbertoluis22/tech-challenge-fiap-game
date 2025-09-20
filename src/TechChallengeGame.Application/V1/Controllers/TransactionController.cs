@@ -81,25 +81,26 @@ namespace TechChallengeGame.Application.V1.Controllers
         /// <param name="request">The refund request details.</param>
         /// <returns>The created refund transaction.</returns>
         [HttpPost("refund")]
-        [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.Created)]
-        [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.NotFound)]
-        public async Task<ActionResult<Root<HistoryPaymentResponse>>> Refund(RefundRequest request)
+        [ProducesResponseType((int)HttpStatusCode.Accepted)] // Resposta de sucesso agora é 202
+        [ProducesResponseType(typeof(Root<object>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(Root<object>), (int)HttpStatusCode.NotFound)]
+        public async Task<ActionResult<Root<object>>> Refund(RefundRequest request) // O tipo de retorno genérico pode ser <object>
         {
             if (!ModelState.IsValid)
             {
-                return CustomModelStateResponse<HistoryPaymentResponse>(ModelState);
+                return CustomModelStateResponse<object>(ModelState);
             }
 
-            var historyPayment = await _transactionService.CreateRefundAsync(request);
+            var result = await _transactionService.CreateRefundAsync(request);
 
-            if (historyPayment is null)
+            if (!result)
             {
-                // Os erros já foram adicionados ao Notifier pelo serviço
-                return CustomResponse<HistoryPaymentResponse>(statusCode: HttpStatusCode.BadRequest);
+                // Se o serviço retornou 'false', significa que uma notificação de erro foi adicionada.
+                return CustomResponse<object>(statusCode: HttpStatusCode.BadRequest);
             }
 
-            return CustomResponse(data: historyPayment.MapToDto(), statusCode: HttpStatusCode.Created);
+            // Retorna 202 Accepted sem corpo de resposta, indicando que a solicitação foi aceita.
+            return StatusCode((int)HttpStatusCode.Accepted, new Root<object> { StatusCode = 202, Success = true });
         }
 
     }
