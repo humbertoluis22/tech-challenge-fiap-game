@@ -15,6 +15,7 @@ namespace TechChallengeGame.Domain.Services
         private readonly IAmazonSQS _sqsClient;
         private readonly ILogger<SqsQueuePublisher> _logger;
 
+
         public SqsQueuePublisher(IAmazonSQS sqsClient, ILogger<SqsQueuePublisher> logger)
         {
             _sqsClient = sqsClient;

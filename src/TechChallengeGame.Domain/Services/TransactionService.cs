@@ -131,15 +131,15 @@ namespace TechChallengeGame.Domain.Services
 
             // 3. Preparar e enviar o comando para a fila SQS
             // descomentar quando for implementar
-            //foreach (var game in commandGames)
-            //{
-            //    game.HistoryPaymentId = historyPayment.Id;
-            //}
+            foreach (var game in commandGames)
+            {
+                game.HistoryPaymentId = historyPayment.Id;
+            }
 
-            //var purchaseCommand = new CreatePurchaseCommand(request.UserId, commandGames);
-            //var queueUrl = _configuration["SqsPublisher:QueueUrl"];
+            var purchaseCommand = new CreatePurchaseCommand(request.UserId, commandGames);
+            var queueUrl = _configuration["SqsPublisher:QueueUrl"];
 
-            //await _queuePublisher.PublishAsync(queueUrl, purchaseCommand, ct);
+            await _queuePublisher.PublishAsync(queueUrl, purchaseCommand, ct);
 
             return historyPayment;
         }

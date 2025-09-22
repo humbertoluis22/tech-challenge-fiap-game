@@ -32,7 +32,7 @@ namespace TechChallengeGame.Data.Repositories
                     .MultiMatch(mm => mm
                         .Query(query)
                         .Fields(new[] { "name", "description" })
-                        .Fuzziness(new Fuzziness("AUTO")) // CORREÇÃO AQUI
+                        .Fuzziness(new Fuzziness("AUTO")) 
                         .Operator(Operator.And)
                     )
                 )

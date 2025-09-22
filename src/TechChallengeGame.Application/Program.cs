@@ -20,7 +20,7 @@ using Amazon.SQS;
 using TechChallengeGame.Application.BackgroundServices;
 using Amazon.SimpleNotificationService;
 using TechChallengeGame.Application.Services;
-
+using Amazon.Extensions.NETCore.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,7 +95,21 @@ builder.Services.AddHttpContextAccessor();
 
 
 // Configuração da AWS SNS
-builder.Services.AddAWSService<IAmazonSimpleNotificationService>();
+
+builder.Services.AddSingleton<IAmazonSQS>(sp =>
+{
+    var awsOptions = builder.Configuration.GetAWSOptions();
+    awsOptions.Region = Amazon.RegionEndpoint.USEast2; // Força a região US East (Ohio)
+    return awsOptions.CreateServiceClient<IAmazonSQS>();
+});
+
+// Adiciona o cliente SNS configurado para a região correta
+builder.Services.AddSingleton<IAmazonSimpleNotificationService>(sp =>
+{
+    var awsOptions = builder.Configuration.GetAWSOptions();
+    awsOptions.Region = Amazon.RegionEndpoint.USEast2; // Força a região US East (Ohio)
+    return awsOptions.CreateServiceClient<IAmazonSimpleNotificationService>();
+});
 
 // Registra as opções para o publisher ler do appsettings.json
 builder.Services.Configure<SnsPublisherOptions>(
@@ -104,14 +118,12 @@ builder.Services.Configure<SnsPublisherOptions>(
 // Registra nossa abstração do publisher
 builder.Services.AddScoped<IEventPublisher, SnsEventPublisher>();
 
-// 1. Configuração da AWS SQS
-builder.Services.AddAWSService<IAmazonSQS>();
 
-// 2. Registra a classe de opções para o nosso consumer ler do appsettings.json
+//  Registra a classe de opções para o nosso consumer ler do appsettings.json
 builder.Services.Configure<SqsConsumerOptions>(
     builder.Configuration.GetSection(SqsConsumerOptions.SectionName));
 
-// 3. Registra o consumer como um serviço que roda em background
+//  Registra o consumer como um serviço que roda em background
 builder.Services.AddHostedService<CatalogEventsConsumer>();
 
 
