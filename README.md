@@ -61,7 +61,7 @@ O projeto utiliza as seguintes bibliotecas principais:
 | Id | UUID PRIMARY KEY | ID único da biblioteca. |
 | UserId | UUID | ID do usuário (vindo de outro serviço). |
 
-## आइट Tabela de LibraryItem
+## 📋 Tabela de LibraryItem
 
 | Coluna | Tipo | Descrição |
 | :--- | :--- | :--- |
