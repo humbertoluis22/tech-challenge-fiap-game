@@ -8,10 +8,11 @@ using TechChallengeGame.Domain.Entities.validations;
 using TechChallengeGame.Domain.Entities;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
+using TechChallengeGame.Shared.Models.Dtos.Events;
 
 namespace TechChallengeGame.Domain.Services
 {
-    public class GameService(INotifier notifier, IGameRepository gameRepository, IUnitOfWork unitOfWork, ElasticsearchClient elasticClient)
+    public class GameService(INotifier notifier, IGameRepository gameRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
     : BaseService(notifier),
         IGameService
     {
@@ -34,28 +35,21 @@ namespace TechChallengeGame.Domain.Services
 
                 var success =  await unitOfWork.CommitAsync(ct);
 
-                // 2. SE SALVOU NO BANCO, INDEXA NO ELASTICSEARCH
+                // 1. SE SALVOU NO BANCO, publica evento para adicionar
                 if (success)
                 {
-                    var gameDocument = new GameResponse
+                    var gameCreatedEvent = new GameCreatedEvent
                     {
                         Id = model.Id,
                         Name = model.Name,
-                        Price = model.Price,
+                        Description = model.Description,
                         Genre = model.Genre,
+                        Price = model.Price,
                         IsActive = model.IsActive,
+                        ReleaseDate = model.ReleaseDate,
                         CreatedAt = model.CreatedAt
                     };
-                    var indexResponse = await elasticClient.IndexAsync(gameDocument, "games", ct);
-                    if (!indexResponse.IsValidResponse)
-                    {
-                        // Se a indexação falhou, registre um erro para você poder investigar!
-                        // Opcional: Você poderia até mesmo reverter a transação do banco de dados aqui se a consistência for crítica.
-                        // logger.LogError("Falha ao indexar documento no Elasticsearch: {Reason}", indexResponse.DebugInformation);
-                        Console.WriteLine($"Erro ao indexar : {indexResponse.DebugInformation}");
-                        Notify("O jogo foi criado, mas falhou ao ser sincronizado com o sistema de busca.");
-                    }
-
+                    await eventPublisher.PublishAsync(gameCreatedEvent, ct);
                 }
 
                 return success;
@@ -94,29 +88,26 @@ namespace TechChallengeGame.Domain.Services
                 game.Price = model.Price;
                 game.Genre = model.Genre;
                 game.IsActive = model.IsActive;
+                game.UpdatedAt = DateTime.UtcNow;
 
                 gameRepository.Update(game);
-
                 var success = await unitOfWork.CommitAsync(ct);
 
-                // 3. SE ATUALIZOU NO BANCO, ATUALIZA NO ELASTICSEARCH
+                // 2. SE ATUALIZOU NO BANCO, publica evento para atualizar
                 if (success)
                 {
-                    var gameDocument = new GameResponse
+                    var gameUpdatedEvent = new GameUpdatedEvent
                     {
                         Id = game.Id,
                         Name = game.Name,
+                        Description = game.Description,
+                        Genre = game.Genre,
                         Price = game.Price,
                         IsActive = game.IsActive,
-                        CreatedAt = game.CreatedAt,
+                        ReleaseDate = game.ReleaseDate,
                         UpdatedAt = game.UpdatedAt
                     };
-
-                    await elasticClient.UpdateAsync<GameResponse, GameResponse>(
-                        "games",
-                        game.Id,
-                        u => u.Doc(gameDocument),
-                        ct);
+                    await eventPublisher.PublishAsync(gameUpdatedEvent, ct);
                 }
 
                 return success;
@@ -145,13 +136,13 @@ namespace TechChallengeGame.Domain.Services
                 game.IsActive = false;
 
                 gameRepository.Delete(game);
-
                 var success = await unitOfWork.CommitAsync(ct);
 
-                // 4. SE DELETOU DO BANCO, DELETA DO ELASTICSEARCH
+                // 3. SE DELETOU DO BANCO, publica evento para deletar
                 if (success)
                 {
-                    await elasticClient.DeleteAsync("games", id.ToString(), ct);
+                    var gameDeletedEvent = new GameDeletedEvent { Id = id };
+                    await eventPublisher.PublishAsync(gameDeletedEvent, ct);
                 }
 
                 return success;
