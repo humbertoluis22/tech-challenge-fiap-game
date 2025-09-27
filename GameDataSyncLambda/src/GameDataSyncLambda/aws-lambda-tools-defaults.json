@@ -1,16 +1,17 @@
 {
   "Information": [
-    "This file provides default values for the deployment wizard inside Visual Studio and the AWS Lambda commands added to the .NET Core CLI.",
-    "To learn more about the Lambda commands with the .NET Core CLI execute the following command at the command line in the project root directory.",
-    "dotnet lambda help",
-    "All the command line options for the Lambda command can be specified in this file."
+    "This file provides default values for the deployment wizard inside Visual Studio and the AWS Lambda commands found in the AWS toolkit.",
+    "The Lambda commands with their options can be found here: https://github.com/aws/aws-lambda-dotnet/tree/master/Libraries/src/Amazon.Lambda.Tools#aws-lambda-command-line-tools",
+    "See https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime"
   ],
   "profile": "default",
   "region": "us-east-2",
   "configuration": "Release",
-  "function-runtime": "dotnet8",
-  "function-memory-size": 512,
+  "framework": "net8.0",
+  "function-name": "GameDataSyncLambda",
+  "function-handler": "GameDataSyncLambda::Function::FunctionHandler",
+  "function-memory-size": 256,
   "function-timeout": 30,
-  "function-handler": "GameDataSyncLambda",
-  "msbuild-parameters": "--self-contained true"
+  "function-runtime": "dotnet8",
+  "environment-variables": "ELASTICSEARCH_URI=http://localhost:9200" // Substitua pela URL do seu cluster Elasticsearch
 }
