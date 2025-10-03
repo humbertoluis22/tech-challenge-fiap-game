@@ -9,9 +9,10 @@
   "configuration": "Release",
   "framework": "net8.0",
   "function-name": "GameDataSyncLambda",
-  "function-handler": "GameDataSyncLambda::Function::FunctionHandler",
+  "function-handler": "GameDataSyncLambda::GameDataSyncLambda.Function::FunctionHandler",
   "function-memory-size": 256,
   "function-timeout": 30,
   "function-runtime": "dotnet8",
-  "environment-variables": "ELASTICSEARCH_URI=http://localhost:9200" // Substitua pela URL do seu cluster Elasticsearch
+  "environment-variables": "ELASTICSEARCH_URI=https://my-elasticsearch-project-fa9ad2.es.us-central1.gcp.elastic-cloud.com;ELASTIC_API_KEY_BASE64=d3BienA1a0I0OHllSXdIeFdFOTg6VTRQbDNmdFJLdndoeFBfeVE0Q1EwZw=="
+
 }

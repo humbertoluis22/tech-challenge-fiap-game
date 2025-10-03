@@ -7,10 +7,10 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Elastic.Transport;
 
 // O atributo de Assembly já deve estar no seu arquivo AssemblyInfo.cs ou no .csproj
-// [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
-
+[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 namespace GameDataSyncLambda
 {
     public class Function
@@ -18,36 +18,30 @@ namespace GameDataSyncLambda
         private static readonly ElasticsearchClient _elasticClient;
         private static readonly JsonSerializerOptions _jsonOptions;
 
+
         /// <summary>
         /// O construtor estático é executado uma vez durante a inicialização da Lambda (init phase).
         /// Ideal para inicializar clientes e configurações.
         /// </summary>
         static Function()
         {
+            // 1. Obtenha as variáveis de ambiente.
             var elasticUri = Environment.GetEnvironmentVariable("ELASTICSEARCH_URI");
-            if (string.IsNullOrEmpty(elasticUri))
+            var apiKeyBase64 = Environment.GetEnvironmentVariable("ELASTIC_API_KEY_BASE64");
+
+            // 2. Valide se ambas as variáveis foram fornecidas.
+            if (string.IsNullOrEmpty(elasticUri) || string.IsNullOrEmpty(apiKeyBase64))
             {
-                // Lança uma exceção para falhar a inicialização se a variável de ambiente não estiver definida
-                throw new InvalidOperationException("A variável de ambiente 'ELASTICSEARCH_URI' não foi configurada.");
+                throw new InvalidOperationException("As variáveis de ambiente 'ELASTICSEARCH_URI' e 'ELASTIC_API_KEY_BASE64' são obrigatórias.");
             }
 
+            // 3. Configure o cliente de forma explícita.
             var settings = new ElasticsearchClientSettings(new Uri(elasticUri))
-                .DefaultIndex("games"); // Define o índice padrão para os jogos
+                .DefaultIndex("games")
+                .Authentication(new ApiKey(apiKeyBase64));
 
             _elasticClient = new ElasticsearchClient(settings);
             _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        }
-
-        /// <summary>
-        /// Ponto de entrada principal que será registrado no Lambda Bootstrap.
-        /// </summary>
-        private static async Task Main()
-        {
-            // O handler agora espera um SQSEvent e não retorna nada (Task)
-            Func<SQSEvent, ILambdaContext, Task> handler = FunctionHandler;
-            await Amazon.Lambda.RuntimeSupport.LambdaBootstrapBuilder.Create(handler, new SourceGeneratorLambdaJsonSerializer<LambdaFunctionJsonSerializerContext>())
-                .Build()
-                .RunAsync();
         }
 
         /// <summary>
@@ -74,7 +68,6 @@ namespace GameDataSyncLambda
             {
                 context.Logger.LogInformation($"Processando MessageId: {message.MessageId}");
 
-                // Desserializa o corpo da mensagem SQS para obter a mensagem SNS
                 var snsMessage = JsonSerializer.Deserialize<SnsMessage>(message.Body, _jsonOptions);
 
                 if (snsMessage?.Type != "Notification" || snsMessage.MessageAttributes == null)
@@ -92,28 +85,61 @@ namespace GameDataSyncLambda
                 var eventType = eventTypeAttr.Value;
                 context.Logger.LogInformation($"Tipo de Evento recebido: {eventType}");
 
-                // Roteia para o processador correto com base no tipo de evento
                 switch (eventType)
                 {
                     case "GameCreatedEvent":
                         var createEvent = JsonSerializer.Deserialize<GameDocument>(snsMessage.Message, _jsonOptions);
-                        var createResponse = await _elasticClient.IndexAsync(createEvent, createEvent.Id.ToString());
-                        if (!createResponse.IsValidResponse) throw new Exception(createResponse.DebugInformation);
-                        context.Logger.LogInformation($"Jogo '{createEvent.Id}' indexado com sucesso.");
+                       
+                        var createResponse = await _elasticClient.CreateAsync(createEvent, createEvent.Id);
+
+                        if (!createResponse.IsValidResponse)
+                        {
+                            if (createResponse.ApiCallDetails.HttpStatusCode == 409)
+                            {
+                                context.Logger.LogWarning($"O jogo com ID '{createEvent.Id}' já existe no Elasticsearch. A operação de criação foi ignorada.");
+                            }
+                            else
+                            {
+                                throw new Exception(createResponse.DebugInformation);
+                            }
+                        }
+                        else
+                        {
+                            context.Logger.LogInformation($"Jogo '{createEvent.Id}' criado com sucesso no Elasticsearch.");
+                        }
                         break;
 
                     case "GameUpdatedEvent":
                         var updateEvent = JsonSerializer.Deserialize<GameDocument>(snsMessage.Message, _jsonOptions);
-                        var updateResponse = await _elasticClient.UpdateAsync<GameDocument, object>("games", updateEvent.Id.ToString(), u => u.Doc(updateEvent));
-                        if (!updateResponse.IsValidResponse) throw new Exception(updateResponse.DebugInformation);
+                        // O método UpdateAsync é o correto para atualizações.
+                        var updateResponse = await _elasticClient.UpdateAsync<GameDocument, object>("games", updateEvent.Id, u => u.Doc(updateEvent));
+                        if (!updateResponse.IsValidResponse)
+                        {
+                            throw new Exception(updateResponse.DebugInformation);
+                        }
                         context.Logger.LogInformation($"Jogo '{updateEvent.Id}' atualizado com sucesso.");
                         break;
 
                     case "GameDeletedEvent":
                         var deleteEvent = JsonSerializer.Deserialize<GameDeletedEventPayload>(snsMessage.Message, _jsonOptions);
-                        var deleteResponse = await _elasticClient.DeleteAsync("games", deleteEvent.Id.ToString());
-                        if (!deleteResponse.IsValidResponse) throw new Exception(deleteResponse.DebugInformation);
-                        context.Logger.LogInformation($"Jogo '{deleteEvent.Id}' removido com sucesso.");
+                        // A forma mais simples e correta de deletar por ID.
+                        var deleteResponse = await _elasticClient.DeleteAsync("games", deleteEvent.Id);
+                        if (!deleteResponse.IsValidResponse)
+                        {
+                            // Se o documento não foi encontrado (404), não é um erro fatal.
+                            if (deleteResponse.ApiCallDetails.HttpStatusCode == 404)
+                            {
+                                context.Logger.LogWarning($"O jogo com ID '{deleteEvent.Id}' não foi encontrado no Elasticsearch para deleção. A operação foi ignorada.");
+                            }
+                            else
+                            {
+                                throw new Exception(deleteResponse.DebugInformation);
+                            }
+                        }
+                        else
+                        {
+                            context.Logger.LogInformation($"Jogo '{deleteEvent.Id}' removido com sucesso.");
+                        }
                         break;
 
                     default:
@@ -124,12 +150,12 @@ namespace GameDataSyncLambda
             catch (JsonException jsonEx)
             {
                 context.Logger.LogError($"Erro de desserialização JSON: {jsonEx.Message}. Corpo da mensagem: {message.Body}");
+                throw; // Lançar para que a SQS possa tentar reprocessar ou enviar para a DLQ.
             }
             catch (Exception ex)
             {
                 context.Logger.LogError($"Erro inesperado ao processar mensagem: {ex.ToString()}");
-                // Lança a exceção para que a mensagem retorne à fila e possa ser processada novamente (conforme a política de retentativa da sua fila)
-                throw;
+                throw; // Lançar para que a SQS possa tentar reprocessar ou enviar para a DLQ.
             }
         }
     }
