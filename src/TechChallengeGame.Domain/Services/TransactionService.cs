@@ -148,16 +148,7 @@ namespace TechChallengeGame.Domain.Services
         public async Task<bool> CreateRefundAsync(RefundRequest request, CancellationToken ct = default)
         {
             
-            var originalTransaction = await _historyPaymentRepository.GetByIdAsync(request.PaymentTransactionId, ct);
-
-            if (originalTransaction is null)
-            {
-                Notify("Transação de pagamento não encontrada.");
-                return false;
-            }
-
             
-
             // 2. Publicar as informações na fila SQS
             var refundEvent = new RefundRequestedEvent(
                 UserId: request.UserId,

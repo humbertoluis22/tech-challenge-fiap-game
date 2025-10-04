@@ -21,7 +21,7 @@ public class GameController(
     IHttpContextAccessor httpContextAccessor,
     IWebHostEnvironment webHostEnvironment,
     IGameRepository gameRepository,
-    IGameQueryRepository gameQueryRepository,
+    //IGameQueryRepository gameQueryRepository,
     IGameService gameService
 ) : MainController(notifier, httpContextAccessor, webHostEnvironment)
 {
@@ -47,32 +47,32 @@ public class GameController(
     /// </summary>
     /// <param name="searchTerm">The term to search for in game names and descriptions.</param>
     /// <returns>A list of games that match the search criteria.</returns>
-    [HttpGet("search")] // Nova Rota: GET /v1/games/search
-    [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> SearchGames([FromQuery] string searchTerm)
-    {
-        if (string.IsNullOrWhiteSpace(searchTerm))
-        {
-            // Retorna uma lista vazia ou um bad request se o termo de busca for obrigatório
-            NotifyError("Search term cannot be empty.");
-            return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
-        }
+    //[HttpGet("search")] // Nova Rota: GET /v1/games/search
+    //[AllowAnonymous]
+    //[ProducesResponseType(StatusCodes.Status200OK)]
+    //public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> SearchGames([FromQuery] string searchTerm)
+    //{
+    //    if (string.IsNullOrWhiteSpace(searchTerm))
+    //    {
+    //        // Retorna uma lista vazia ou um bad request se o termo de busca for obrigatório
+    //        NotifyError("Search term cannot be empty.");
+    //        return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
+    //    }
 
-        logger.LogInformation("Buscando jogos no Elasticsearch com o termo: {SearchTerm}", searchTerm);
+    //    logger.LogInformation("Buscando jogos no Elasticsearch com o termo: {SearchTerm}", searchTerm);
 
-        // Usando o gameQueryRepository que busca do Elasticsearch
-        var games = await gameQueryRepository.SearchAsync(searchTerm);
+    //    // Usando o gameQueryRepository que busca do Elasticsearch
+    //    var games = await gameQueryRepository.SearchAsync(searchTerm);
 
-        if (!games.Any())
-        {
+    //    if (!games.Any())
+    //    {
             
-            NotifyError("No similar games found.");
-            return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
+    //        NotifyError("No similar games found.");
+    //        return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
 
-        }
-        return CustomResponse(data: games);
-    }
+    //    }
+    //    return CustomResponse(data: games);
+    //}
 
     // NOVA ROTA DE RECOMENDAÇÕES ABAIXO
 
@@ -82,21 +82,21 @@ public class GameController(
     /// <param name="id">The unique identifier of the game to get recommendations for.</param>
     /// <returns>A list of recommended games.</returns>
     /// <response code="200">Returns the list of recommended games.</response>
-    [HttpGet("{id:guid}/recommendations")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(Root<IEnumerable<GameResponse>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> GetRecommendations(Guid id)
-    {
-        logger.LogInformation("Buscando recomendações para o jogo com ID: {GameId}", id);
-        var recommendations = await gameQueryRepository.GetRecommendationsAsync(id);
-        if (!recommendations.Any())
-        {
-            NotifyError("No similar games found.");
-            return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
+    //[HttpGet("{id:guid}/recommendations")]
+    //[AllowAnonymous]
+    //[ProducesResponseType(typeof(Root<IEnumerable<GameResponse>>), StatusCodes.Status200OK)]
+    //public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> GetRecommendations(Guid id)
+    //{
+    //    logger.LogInformation("Buscando recomendações para o jogo com ID: {GameId}", id);
+    //    var recommendations = await gameQueryRepository.GetRecommendationsAsync(id);
+    //    if (!recommendations.Any())
+    //    {
+    //        NotifyError("No similar games found.");
+    //        return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
 
-        }
-        return CustomResponse(data: recommendations);
-    }
+    //    }
+    //    return CustomResponse(data: recommendations);
+    //}
 
 
     // NOVA ROTA DE AGREGAÇÕES ABAIXO
@@ -106,15 +106,15 @@ public class GameController(
     /// </summary>
     /// <returns>An aggregation of genres and their respective game counts.</returns>
     /// <response code="200">Returns the genre summary.</response>
-    [HttpGet("genres/summary")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(Root<object>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Root<object>>> GetGenreSummary()
-    {
-        logger.LogInformation("Buscando agregação de gêneros");
-        var aggregations = await gameQueryRepository.GetGenreAggregationsAsync();
-        return CustomResponse(data: aggregations);
-    }
+    //[HttpGet("genres/summary")]
+    //[AllowAnonymous]
+    //[ProducesResponseType(typeof(Root<object>), StatusCodes.Status200OK)]
+    //public async Task<ActionResult<Root<object>>> GetGenreSummary()
+    //{
+    //    logger.LogInformation("Buscando agregação de gêneros");
+    //    var aggregations = await gameQueryRepository.GetGenreAggregationsAsync();
+    //    return CustomResponse(data: aggregations);
+    //}
 
 
 
@@ -125,20 +125,20 @@ public class GameController(
     /// <returns>Game data</returns>
     /// <response code="200">Returns the requested game</response>
     /// <response code="404">Game not found</response>
-    [HttpGet("{id:guid}")]
-    //[AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Root<GameResponse>>> GetGameById(Guid id)
-    {
-        var game = await gameRepository.GetByIdAsync(id);
+    //[HttpGet("{id:guid}")]
+    ////[AllowAnonymous]
+    //[ProducesResponseType(StatusCodes.Status200OK)]
+    //[ProducesResponseType(StatusCodes.Status404NotFound)]
+    //public async Task<ActionResult<Root<GameResponse>>> GetGameById(Guid id)
+    //{
+    //    var game = await gameRepository.GetByIdAsync(id);
 
-        if (game != null)
-            return CustomResponse(data: game.MapToDto());
+    //    if (game != null)
+    //        return CustomResponse(data: game.MapToDto());
 
-        NotifyError("Game not found");
-        return CustomResponse<GameResponse>(statusCode: HttpStatusCode.NotFound);
-    }
+    //    NotifyError("Game not found");
+    //    return CustomResponse<GameResponse>(statusCode: HttpStatusCode.NotFound);
+    //}
 
 
 

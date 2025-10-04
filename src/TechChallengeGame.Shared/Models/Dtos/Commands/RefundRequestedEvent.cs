@@ -9,6 +9,8 @@ namespace TechChallengeGame.Shared.Models.Dtos.Commands
 {
     public record RefundRequestedEvent(
         [Required] Guid UserId,
-        [Required] Guid PaymentTransactionId
+        [Required] Guid PaymentTransactionId,
+        string CommandType = "create-refund" 
+
     );
 }

@@ -89,8 +89,10 @@ namespace GameDataSyncLambda
                 {
                     case "GameCreatedEvent":
                         var createEvent = JsonSerializer.Deserialize<GameDocument>(snsMessage.Message, _jsonOptions);
-                       
-                        var createResponse = await _elasticClient.CreateAsync(createEvent, createEvent.Id);
+
+                        // ## CORREÇÃO APLICADA AQUI ##
+                        // Especifica explicitamente o índice "games" e o ID do documento.
+                        var createResponse = await _elasticClient.CreateAsync(createEvent, d => d.Index("games").Id(createEvent.Id));
 
                         if (!createResponse.IsValidResponse)
                         {

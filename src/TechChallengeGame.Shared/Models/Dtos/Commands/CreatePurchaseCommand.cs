@@ -9,6 +9,8 @@ namespace TechChallengeGame.Shared.Models.Dtos.Commands
 {
     public record CreatePurchaseCommand(
         [Required] Guid UserId,
-        [Required] List<GamePromotion> Games
+        [Required] List<GamePromotion> Games,
+        string CommandType = "create-purchase" 
+
     );
 }
