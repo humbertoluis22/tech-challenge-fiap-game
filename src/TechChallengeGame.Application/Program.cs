@@ -37,28 +37,28 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .WriteTo.Console() // Mantenha para ver os logs no console do container
-    //.WriteTo.Elasticsearch(
-    //    new ElasticsearchSinkOptions(new Uri(context.Configuration["Serilog:WriteTo:0:Args:nodeUris"]))
-    //    {
-    //        IndexFormat = context.Configuration["Serilog:WriteTo:0:Args:indexFormat"],
-    //        AutoRegisterTemplate = true,
-    //        TypeName = null,
-    //        MinimumLogEventLevel = LogEventLevel.Information
-    //    })
+    .WriteTo.Elasticsearch(
+        new ElasticsearchSinkOptions(new Uri(context.Configuration["Serilog:WriteTo:0:Args:nodeUris"]))
+        {
+            IndexFormat = context.Configuration["Serilog:WriteTo:0:Args:indexFormat"],
+            AutoRegisterTemplate = true,
+            TypeName = null,
+            MinimumLogEventLevel = LogEventLevel.Information
+        })
     .WriteTo.Console(
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
 );
 
 
-//// Adicione a configuração do cliente Elasticsearch
-//var elasticUri = builder.Configuration["Elasticsearch:Uri"];
-//builder.Services.AddSingleton<ElasticsearchClient>(sp =>
-//{
-//    var settings = new ElasticsearchClientSettings(new Uri(elasticUri))
-//        .DefaultIndex("games"); // Define um índice padrão para os jogos
+// Adicione a configuração do cliente Elasticsearch
+var elasticUri = builder.Configuration["Elasticsearch:Uri"];
+builder.Services.AddSingleton<ElasticsearchClient>(sp =>
+{
+    var settings = new ElasticsearchClientSettings(new Uri(elasticUri))
+        .DefaultIndex("games"); // Define um índice padrão para os jogos
 
-//    return new ElasticsearchClient(settings);
-//});
+    return new ElasticsearchClient(settings);
+});
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -77,7 +77,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddScoped<INotifier, Notifier>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
-//builder.Services.AddScoped<IGameQueryRepository, GameQueryRepository>(); 
+builder.Services.AddScoped<IGameQueryRepository, GameQueryRepository>(); 
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
@@ -172,7 +172,7 @@ builder.Services.AddExceptionHandler(options =>
 
 var app = builder.Build();
 
-//  Aplica as migrações automáticas ao subir a API
+//Aplica as migrações automáticas ao subir a API
 //using (var scope = app.Services.CreateScope())
 //{
 //    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

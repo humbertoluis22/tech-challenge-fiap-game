@@ -24,6 +24,10 @@ services:
         ASPNETCORE_ENVIRONMENT: Local 
         DOTNET_RUNNING_IN_CONTAINER: "true"
         ASPNETCORE_URLS: "http://+:5001" 
+
+        AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+        AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+        AWS_REGION: ${AWS_REGION}
     ports:
       - "5001:5001"
     restart: on-failure

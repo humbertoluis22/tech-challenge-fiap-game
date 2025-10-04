@@ -12,7 +12,7 @@ using TechChallengeGame.Shared.Models.Dtos.Events;
 
 namespace TechChallengeGame.Domain.Services
 {
-    public class GameService(INotifier notifier, IGameRepository gameRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
+    public class GameService(INotifier notifier, IGameRepository gameRepository, IUnitOfWork unitOfWork, ElasticsearchClient elasticClient)
     : BaseService(notifier),
         IGameService
     {
@@ -35,22 +35,27 @@ namespace TechChallengeGame.Domain.Services
 
                 var success =  await unitOfWork.CommitAsync(ct);
 
-                // 1. SE SALVOU NO BANCO, publica evento para adicionar
-                //if (success)
-                //{
-                //    var gameCreatedEvent = new GameCreatedEvent
-                //    {
-                //        Id = model.Id,
-                //        Name = model.Name,
-                //        Description = model.Description,
-                //        Genre = model.Genre,
-                //        Price = model.Price,
-                //        IsActive = model.IsActive,
-                //        ReleaseDate = model.ReleaseDate,
-                //        CreatedAt = model.CreatedAt
-                //    };
-                //    await eventPublisher.PublishAsync(gameCreatedEvent, ct);
-                //}
+                // 1. SE SALVOU NO BANCO,  INDEXA NO ELASTICSEARCH
+                if (success)
+                {
+                    var gameDocument = new GameResponse
+                    {
+                        Id = model.Id,
+                        Name = model.Name,
+                        Price = model.Price,
+                        Genre = model.Genre,
+                        IsActive = model.IsActive,
+                        CreatedAt = model.CreatedAt
+                    };
+                    var indexResponse = await elasticClient.IndexAsync(gameDocument, "games", ct);
+                    if (!indexResponse.IsValidResponse)
+                    {
+                    
+                        Console.WriteLine($"Erro ao indexar : {indexResponse.DebugInformation}");
+                        Notify("O jogo foi criado, mas falhou ao ser sincronizado com o sistema de busca.");
+                    }
+
+                }
 
                 return success;
             }
@@ -93,22 +98,25 @@ namespace TechChallengeGame.Domain.Services
                 gameRepository.Update(game);
                 var success = await unitOfWork.CommitAsync(ct);
 
-                // 2. SE ATUALIZOU NO BANCO, publica evento para atualizar
-                //if (success)
-                //{
-                //    var gameUpdatedEvent = new GameUpdatedEvent
-                //    {
-                //        Id = game.Id,
-                //        Name = game.Name,
-                //        Description = game.Description,
-                //        Genre = game.Genre,
-                //        Price = game.Price,
-                //        IsActive = game.IsActive,
-                //        ReleaseDate = game.ReleaseDate,
-                //        UpdatedAt = game.UpdatedAt
-                //    };
-                //    await eventPublisher.PublishAsync(gameUpdatedEvent, ct);
-                //}
+                // 3. SE ATUALIZOU NO BANCO, ATUALIZA NO ELASTICSEARCH
+                if (success)
+                {
+                    var gameDocument = new GameResponse
+                    {
+                        Id = game.Id,
+                        Name = game.Name,
+                        Price = game.Price,
+                        IsActive = game.IsActive,
+                        CreatedAt = game.CreatedAt,
+                        UpdatedAt = game.UpdatedAt
+                    };
+
+                    await elasticClient.UpdateAsync<GameResponse, GameResponse>(
+                        "games",
+                        game.Id,
+                        u => u.Doc(gameDocument),
+                        ct);
+                }
 
                 return success;
             }
@@ -139,11 +147,10 @@ namespace TechChallengeGame.Domain.Services
                 var success = await unitOfWork.CommitAsync(ct);
 
                 // 3. SE DELETOU DO BANCO, publica evento para deletar
-                //if (success)
-                //{
-                //    var gameDeletedEvent = new GameDeletedEvent { Id = id };
-                //    await eventPublisher.PublishAsync(gameDeletedEvent, ct);
-                //}
+                if (success)
+                {
+                    await elasticClient.DeleteAsync("games", id.ToString(), ct);
+                }
 
                 return success;
             }
