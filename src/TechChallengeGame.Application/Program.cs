@@ -22,6 +22,9 @@ using Amazon.SimpleNotificationService;
 using TechChallengeGame.Application.Services;
 using Amazon.Extensions.NETCore.Setup;
 using Elastic.Transport;
+using TechChallengeGame.Application.Middlewares;
+using CorrelationId;
+using LamarCodeGeneration.Frames;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,23 +37,24 @@ builder
 
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
-    .WriteTo.Console() // Mantenha para ver os logs no console do container
-    .WriteTo.Elasticsearch(
-        new ElasticsearchSinkOptions(new Uri(context.Configuration["Serilog:WriteTo:0:Args:nodeUris"]))
-        {
-            IndexFormat = context.Configuration["Serilog:WriteTo:0:Args:indexFormat"],
-            AutoRegisterTemplate = true,
-            TypeName = null,
-            MinimumLogEventLevel = LogEventLevel.Information
-        })
-    .WriteTo.Console(
-        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .Enrich.WithProperty("X-Correlation-ID", context.HostingEnvironment.ApplicationName) 
+    .WriteTo.Console()
+    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(context.Configuration["Elasticsearch:Uri"]))
+    {
+        IndexFormat = "fcg-logs-{0:yyyy.MM.dd}",
+        TypeName = null,
+        AutoRegisterTemplate = true,
+        OverwriteTemplate = true,
+        NumberOfShards = 1,
+        NumberOfReplicas = 1,
+        ModifyConnectionSettings = x => x.ApiKeyAuthentication(context.Configuration["Elasticsearch:Id"], context.Configuration["Elasticsearch:ApiKey"])
+    })
 );
 
 
-// Adicione a configuração do cliente Elasticsearch
 var elasticUri = builder.Configuration["Elasticsearch:Uri"];
 var apiKey = builder.Configuration["Elasticsearch:ApiKey"];
 
@@ -173,6 +177,10 @@ builder.Services.AddExceptionHandler(options =>
 });
 
 var app = builder.Build();
+
+//app.UseMiddleware<CorrelationIdMiddleware>();
+
+
 
 //Aplica as migrações automáticas ao subir a API
 // funciona no docker
