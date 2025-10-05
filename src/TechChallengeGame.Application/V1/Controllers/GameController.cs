@@ -15,6 +15,7 @@ namespace TecChallenge.Application.V1.Controllers;
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/games")]
 [Produces("application/json")]
+//[Authorize]
 public class GameController(
     INotifier notifier,
     ILogger<GameController> logger,
@@ -94,7 +95,7 @@ public class GameController(
             NotifyError("No similar games found.");
             return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
 
-        }
+        } 
         return CustomResponse(data: recommendations);
     }
 

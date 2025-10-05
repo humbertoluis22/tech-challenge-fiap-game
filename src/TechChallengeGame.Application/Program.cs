@@ -21,6 +21,7 @@ using TechChallengeGame.Application.BackgroundServices;
 using Amazon.SimpleNotificationService;
 using TechChallengeGame.Application.Services;
 using Amazon.Extensions.NETCore.Setup;
+using Elastic.Transport;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +32,6 @@ builder
     .AddEnvironmentVariables();
 
 
-// Configuração do Serilog
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .Enrich.FromLogContext()
@@ -52,10 +52,12 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // Adicione a configuração do cliente Elasticsearch
 var elasticUri = builder.Configuration["Elasticsearch:Uri"];
+var apiKey = builder.Configuration["Elasticsearch:ApiKey"];
+
 builder.Services.AddSingleton<ElasticsearchClient>(sp =>
 {
     var settings = new ElasticsearchClientSettings(new Uri(elasticUri))
-        .DefaultIndex("games"); // Define um índice padrão para os jogos
+        .DefaultIndex("games").Authentication(new ApiKey(apiKey));
 
     return new ElasticsearchClient(settings);
 });
@@ -116,7 +118,7 @@ builder.Services.Configure<SnsPublisherOptions>(
     builder.Configuration.GetSection(SnsPublisherOptions.SectionName));
 
 // Registra nossa abstração do publisher
-builder.Services.AddScoped<IEventPublisher, SnsEventPublisher>();
+//builder.Services.AddScoped<IEventPublisher, SnsEventPublisher>();
 
 
 //  Registra a classe de opções para o nosso consumer ler do appsettings.json
@@ -173,6 +175,7 @@ builder.Services.AddExceptionHandler(options =>
 var app = builder.Build();
 
 //Aplica as migrações automáticas ao subir a API
+// funciona no docker
 //using (var scope = app.Services.CreateScope())
 //{
 //    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
