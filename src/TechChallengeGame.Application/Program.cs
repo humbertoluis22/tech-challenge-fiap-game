@@ -23,8 +23,7 @@ using TechChallengeGame.Application.Services;
 using Amazon.Extensions.NETCore.Setup;
 using Elastic.Transport;
 using TechChallengeGame.Application.Middlewares;
-using CorrelationId;
-using LamarCodeGeneration.Frames;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,7 +104,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IAmazonSQS>(sp =>
 {
     var awsOptions = builder.Configuration.GetAWSOptions();
-    awsOptions.Region = Amazon.RegionEndpoint.USEast2; // Força a região US East (Ohio)
+    awsOptions.Region = Amazon.RegionEndpoint.SAEast1; // Força a região US East (Ohio)
     return awsOptions.CreateServiceClient<IAmazonSQS>();
 });
 
@@ -113,7 +112,7 @@ builder.Services.AddSingleton<IAmazonSQS>(sp =>
 builder.Services.AddSingleton<IAmazonSimpleNotificationService>(sp =>
 {
     var awsOptions = builder.Configuration.GetAWSOptions();
-    awsOptions.Region = Amazon.RegionEndpoint.USEast2; // Força a região US East (Ohio)
+    awsOptions.Region = Amazon.RegionEndpoint.SAEast1; // Força a região US East (Ohio)
     return awsOptions.CreateServiceClient<IAmazonSimpleNotificationService>();
 });
 

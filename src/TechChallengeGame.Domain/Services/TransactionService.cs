@@ -137,9 +137,16 @@ namespace TechChallengeGame.Domain.Services
             }
 
             var purchaseCommand = new CreatePurchaseCommand(request.UserId, commandGames);
+            
+            var commandWrapper = new CommandWrapper<CreatePurchaseCommand>
+            {
+                CommandType = "create-purchase",
+                Payload = purchaseCommand
+            };
+
             var queueUrl = _configuration["SqsPublisher:QueueUrl"];
 
-            await _queuePublisher.PublishAsync(queueUrl, purchaseCommand, ct);
+            await _queuePublisher.PublishAsync(queueUrl, commandWrapper, ct);
 
             return historyPayment;
         }
@@ -155,6 +162,12 @@ namespace TechChallengeGame.Domain.Services
                 PaymentTransactionId: request.PaymentTransactionId
             );
 
+            var commandWrapper = new CommandWrapper<RefundRequestedEvent>
+            {
+                CommandType = "create-refund",
+                Payload = refundEvent
+            };
+
             try
             {
                 var queueUrl = _configuration["SqsPublisher:QueueUrl"];
@@ -164,7 +177,7 @@ namespace TechChallengeGame.Domain.Services
                     return false;
                 }
 
-                await _queuePublisher.PublishAsync(queueUrl, refundEvent, ct);
+                await _queuePublisher.PublishAsync(queueUrl, commandWrapper, ct);
             }
             catch (Exception ex)
             {

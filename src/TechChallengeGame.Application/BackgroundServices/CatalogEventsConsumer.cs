@@ -70,27 +70,37 @@ namespace TechChallengeGame.Application.BackgroundServices
             try
             {
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var snsMessage = JsonSerializer.Deserialize<SnsMessage>(message.Body, options);
+                string actualMessageContent = message.Body; // 1. Assume que é uma mensagem direta por padrão.
 
-                if (snsMessage?.Type != "Notification")
+                // 2. Tenta verificar se a mensagem é um "envelope" do SNS.
+                try
                 {
-                    _logger.LogWarning("Mensagem recebida não é do tipo 'Notification'. Ignorando.");
-                    await DeleteMessageFromQueue(message.ReceiptHandle, stoppingToken);
-                    return;
+                    var snsMessage = JsonSerializer.Deserialize<SnsMessage>(message.Body, options);
+                    if (snsMessage?.Type == "Notification" && !string.IsNullOrEmpty(snsMessage.Message))
+                    {
+                        // 3. Se for do SNS, extrai a mensagem interna.
+                        actualMessageContent = snsMessage.Message;
+                        _logger.LogInformation("Mensagem no formato SNS desembrulhada com sucesso.");
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Se falhar a desserialização, não é um problema. Apenas significa que não é um envelope SNS.
+                    _logger.LogInformation("Mensagem recebida no formato SQS direto.");
                 }
 
-                // Lê o CommandType diretamente do corpo da mensagem, que já sabemos que funciona.
-                var commandTypeNode = JsonNode.Parse(snsMessage.Message)?["CommandType"];
+                // 4. A partir daqui, usa 'actualMessageContent' que contém o JSON do evento real.
+                var commandTypeNode = JsonNode.Parse(actualMessageContent)?["CommandType"];
                 var commandType = commandTypeNode?.GetValue<string>();
 
-                _logger.LogInformation("Evento do tipo '{CommandType}' recebido.", commandType);
+                _logger.LogInformation("Evento do tipo '{CommandType}' recebido para processamento.", commandType);
 
                 bool success = false;
                 switch (commandType)
                 {
                     case "create-purchase":
                         // O evento que o serviço de pagamento envia de volta para o catálogo após processar a compra
-                        var purchaseEvent = JsonSerializer.Deserialize<PaymentProcessedEvent>(snsMessage.Message, options);
+                        var purchaseEvent = JsonSerializer.Deserialize<PaymentProcessedEvent>(actualMessageContent, options);
                         if (purchaseEvent != null)
                         {
                             success = await HandlePurchaseAsync(purchaseEvent, stoppingToken);
@@ -99,7 +109,7 @@ namespace TechChallengeGame.Application.BackgroundServices
 
                     case "create-refund":
                         // O evento que o serviço de pagamento envia de volta após processar o reembolso
-                        var refundEvent = JsonSerializer.Deserialize<PaymentProcessedEvent>(snsMessage.Message, options); // Assumindo que o evento de resposta tem a mesma estrutura
+                        var refundEvent = JsonSerializer.Deserialize<PaymentProcessedEvent>(actualMessageContent, options); // Assumindo que o evento de resposta tem a mesma estrutura
                         if (refundEvent != null)
                         {
                             success = await HandleRefundAsync(refundEvent, stoppingToken);
@@ -119,12 +129,12 @@ namespace TechChallengeGame.Application.BackgroundServices
             }
             catch (JsonException jsonEx)
             {
-                _logger.LogError(jsonEx, "Erro de desserialização. A mensagem será removida. Conteúdo: {Body}", message.Body);
+                _logger.LogError(jsonEx, "Erro de desserialização JSON no corpo da mensagem. A mensagem será removida. Conteúdo: {Body}", message.Body);
                 await DeleteMessageFromQueue(message.ReceiptHandle, stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro inesperado ao processar a mensagem {MessageId}. Ela será reprocessada.", message.MessageId);
+                _logger.LogError(ex, "Erro inesperado ao processar a mensagem {MessageId}. Ela não será removida e será reprocessada.", message.MessageId);
             }
         }
 
