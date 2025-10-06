@@ -45,7 +45,7 @@ namespace TechChallengeGame.Domain.Services
             _userLibraryService = userLibraryService;
         }
 
-        public async Task<HistoryPayment> CreatePurchaseAsync(PurchaseRequest request, CancellationToken ct = default)
+        public async Task<HistoryPayment> CreatePurchaseAsync(string userId, PurchaseRequest request, CancellationToken ct = default)
         {
             var commandGames = new List<GamePromotion>();
 
@@ -136,7 +136,7 @@ namespace TechChallengeGame.Domain.Services
                 game.HistoryPaymentId = historyPayment.Id;
             }
 
-            var purchaseCommand = new CreatePurchaseCommand(request.UserId, commandGames);
+            var purchaseCommand = new CreatePurchaseCommand(Guid.Parse(userId), commandGames);
             
             var commandWrapper = new CommandWrapper<CreatePurchaseCommand>
             {
@@ -152,13 +152,13 @@ namespace TechChallengeGame.Domain.Services
         }
 
 
-        public async Task<bool> CreateRefundAsync(RefundRequest request, CancellationToken ct = default)
+        public async Task<bool> CreateRefundAsync(string userId, RefundRequest request, CancellationToken ct = default)
         {
             
             
             // 2. Publicar as informações na fila SQS
             var refundEvent = new RefundRequestedEvent(
-                UserId: request.UserId,
+                UserId: Guid.Parse(userId),
                 PaymentTransactionId: request.PaymentTransactionId
             );
 

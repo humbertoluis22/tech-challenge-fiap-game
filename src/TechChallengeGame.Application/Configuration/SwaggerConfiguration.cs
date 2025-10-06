@@ -137,16 +137,23 @@ public class SwaggerDefaultValues : IOperationFilter
                 p.Name == parameter.Name
             );
 
-            parameter.Description ??= description.ModelMetadata.Description;
-
-            if (parameter.Schema.Default == null && description.DefaultValue != null)
+            // ===== INÍCIO DA CORREÇÃO =====
+            // Adiciona uma verificação para garantir que ModelMetadata não é nulo
+            // antes de tentar acessar suas propriedades.
+            if (description.ModelMetadata != null)
             {
-                var json = JsonSerializer.Serialize(
-                    description.DefaultValue,
-                    description.ModelMetadata.ModelType
-                );
-                parameter.Schema.Default = OpenApiAnyFactory.CreateFromJson(json);
+                parameter.Description ??= description.ModelMetadata.Description;
+
+                if (parameter.Schema.Default == null && description.DefaultValue != null)
+                {
+                    var json = JsonSerializer.Serialize(
+                        description.DefaultValue,
+                        description.ModelMetadata.ModelType
+                    );
+                    parameter.Schema.Default = OpenApiAnyFactory.CreateFromJson(json);
+                }
             }
+            // ===== FIM DA CORREÇÃO =====
 
             parameter.Required |= description.IsRequired;
         }

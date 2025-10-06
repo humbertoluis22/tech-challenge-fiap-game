@@ -97,45 +97,7 @@ builder.Services.AddScoped<IHistoryPaymentRepository, HistoryPaymentRepository>(
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IQueuePublisher, SqsQueuePublisher>();
 
-//builder.Services.AddSwaggerConfiguration();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.OperationFilter<SwaggerDefaultValues>();
-
-    c.AddSecurityDefinition(
-        "Bearer",
-        new OpenApiSecurityScheme
-        {
-            Description = "Insira o token JWT da seguinte forma: Bearer {seu token}",
-            Name = "Authorization",
-            Scheme = "Bearer",
-            BearerFormat = "JWT",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.ApiKey,
-        }
-    );
-
-    c.AddSecurityRequirement(
-        new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer",
-                    },
-                },
-                Array.Empty<string>()
-            },
-        }
-    );
-
-    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-});
-
+builder.Services.AddSwaggerConfiguration();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -218,7 +180,6 @@ builder.Services.AddExceptionHandler(options =>
 
 var app = builder.Build();
 
-//app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<JwtMiddleware>();
 
 

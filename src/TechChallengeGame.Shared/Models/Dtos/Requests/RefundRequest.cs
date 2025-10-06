@@ -9,9 +9,7 @@ namespace TechChallengeGame.Shared.Models.Dtos.Requests
 {
     public class RefundRequest
     {
-        [Required]
-        public Guid UserId { get; set; }
-
+ 
         [Required]
         public Guid PaymentTransactionId  { get; set; }
     }

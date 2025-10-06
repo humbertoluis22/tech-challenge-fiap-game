@@ -30,7 +30,7 @@ public class UserLibraryController(
     /// <returns>The user's library containing their game collection</returns>
     /// <response code="200">Returns the user's game library</response>
     /// <response code="404">User library not found</response>
-    [HttpGet("{userId:guid}")]
+    [HttpGet()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<UserLibraryResponse>>> GetUserLibrary()
@@ -68,7 +68,7 @@ public class UserLibraryController(
     /// <returns>Create user library</returns>
     /// <response code="200">Game successfully added to user's library</response>
     /// <response code="404">User library not found</response>
-    [HttpPost("{userId:guid}")]
+    [HttpPost()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<UserLibraryResponse>>> CreateALibraryForUser()
@@ -100,7 +100,7 @@ public class UserLibraryController(
     /// <returns>No content if successful</returns>
     /// <response code="200">Game successfully added to user's library</response>
     /// <response code="404">User library not found</response>
-    [HttpPut("{userId:guid}")]
+    [HttpPut()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<UserLibraryResponse>>> AddGameToLibrary(
@@ -138,7 +138,7 @@ public class UserLibraryController(
     /// <returns>No content if successful</returns>
     /// <response code="200">Game successfully added to user's library</response>
     /// <response code="404">User library not found</response>
-    [HttpDelete("{gameId:guid}")]
+    [HttpDelete()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<UserLibraryResponse>>> RemoveGameFromLibrary(
