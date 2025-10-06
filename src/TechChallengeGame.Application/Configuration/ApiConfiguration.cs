@@ -94,35 +94,35 @@ public static class ApiConfiguration
         {
             endpoints.MapControllers();
 
-            //endpoints.MapHealthChecks(
-            //    "/health",
-            //    new HealthCheckOptions
-            //    {
-            //        ResponseWriter = async (context, report) =>
-            //        {
-            //            context.Response.ContentType = "application/json";
-            //            var options = new JsonSerializerOptions { WriteIndented = true };
+            endpoints.MapHealthChecks(
+               "/health",
+               new HealthCheckOptions
+               {
+                   ResponseWriter = async (context, report) =>
+                   {
+                       context.Response.ContentType = "application/json";
+                       var options = new JsonSerializerOptions { WriteIndented = true };
 
-            //            var response = new
-            //            {
-            //                Status = report.Status.ToString(),
-            //                TotalDuration = report.TotalDuration.TotalMilliseconds,
-            //                Checks = report.Entries.Select(entry => new
-            //                {
-            //                    Name = entry.Key,
-            //                    Status = entry.Value.Status.ToString(),
-            //                    entry.Value.Description,
-            //                    Duration = entry.Value.Duration.TotalMilliseconds,
-            //                    entry.Value.Data,
-            //                }),
-            //            };
+                       var response = new
+                       {
+                           Status = report.Status.ToString(),
+                           TotalDuration = report.TotalDuration.TotalMilliseconds,
+                           Checks = report.Entries.Select(entry => new
+                           {
+                               Name = entry.Key,
+                               Status = entry.Value.Status.ToString(),
+                               entry.Value.Description,
+                               Duration = entry.Value.Duration.TotalMilliseconds,
+                               entry.Value.Data,
+                           }),
+                       };
 
-            //            await context.Response.WriteAsync(
-            //                JsonSerializer.Serialize(response, options)
-            //            );
-            //        },
-            //    }
-            //);
+                       await context.Response.WriteAsync(
+                           JsonSerializer.Serialize(response, options)
+                       );
+                   },
+               }
+           );
         });
     }
 }

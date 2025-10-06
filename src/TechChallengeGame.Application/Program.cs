@@ -178,6 +178,8 @@ builder.Services.AddExceptionHandler(options =>
     };
 });
 
+builder.Services.AddHealthCheckConfig();
+
 var app = builder.Build();
 
 app.UseMiddleware<JwtMiddleware>();

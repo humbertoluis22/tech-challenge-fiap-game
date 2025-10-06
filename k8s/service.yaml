@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-api-service
+  namespace: tech-challenge-game
+spec:
+  selector:
+    app: game-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP

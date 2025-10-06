@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-api-config
+  namespace: tech-challenge-game
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://*:80"
+  Elasticsearch__Uri: "https://my-elasticsearch-project-ba9d4e.es.us-central1.gcp.elastic.cloud"
+  SqsConsumer__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/catalog-events-queue"
+  SnsPublisher__TopicArn: "arn:aws:sns:sa-east-1:208452488125:fcg-events"
+  SqsPublisher__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/payment-events-queue"
+  Serilog__Properties__ServiceName: "tech-challenge-game"
