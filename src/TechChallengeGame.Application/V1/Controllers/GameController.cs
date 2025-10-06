@@ -7,6 +7,7 @@ using TechChallengeGame.Shared.Models.Dtos.Responses;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Generics;
 using TecChallenge.Application.Extensions;
+using MicroserviceExample.Middleware;
 
 namespace TecChallenge.Application.V1.Controllers;
 
@@ -33,10 +34,21 @@ public class GameController(
     /// <returns>List of all games</returns>
     /// <response code="200">Returns the list of games</response>
     [HttpGet]
-    [AllowAnonymous]
+    //[AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> GetAllGames()
     {
+        if (!HttpContext.IsAuthenticated())
+        {
+            logger.LogWarning("Tentativa de acesso sem JWT válido");
+            return Unauthorized(
+                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+            );
+        }
+
+        // Extrair informações do JWT usando os extensions methods
+        var userId = HttpContext.GetUserId();
+
         logger.LogInformation("Chamando rota que recolhe todos os games!");
         var games = (await gameRepository.GetAllAsync()).Select(g => g.MapToDto());
         return CustomResponse(data: games);
