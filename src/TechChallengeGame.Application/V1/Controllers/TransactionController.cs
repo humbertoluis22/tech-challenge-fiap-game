@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MicroserviceExample.Middleware;
+using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using TecChallenge.Application.Controllers;
 using TecChallenge.Application.Extensions;
@@ -44,7 +45,17 @@ namespace TechChallengeGame.Application.V1.Controllers
                 return CustomModelStateResponse<HistoryPaymentResponse>(ModelState);
             }
 
-            var historyPayment = await _transactionService.CreatePurchaseAsync(request);
+            if (!HttpContext.IsAuthenticated())
+            {
+                return Unauthorized(
+                    new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+                );
+            }
+
+            // Extrair informações do JWT usando os extensions methods
+            var userId = HttpContext.GetUserId();
+
+            var historyPayment = await _transactionService.CreatePurchaseAsync(userId,request);
 
             if (historyPayment is null)
             {
@@ -90,8 +101,17 @@ namespace TechChallengeGame.Application.V1.Controllers
             {
                 return CustomModelStateResponse<object>(ModelState);
             }
+            if (!HttpContext.IsAuthenticated())
+            {
+                return Unauthorized(
+                    new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+                );
+            }
 
-            var result = await _transactionService.CreateRefundAsync(request);
+            // Extrair informações do JWT usando os extensions methods
+            var userId = HttpContext.GetUserId();
+
+            var result = await _transactionService.CreateRefundAsync(userId,request);
 
             if (!result)
             {

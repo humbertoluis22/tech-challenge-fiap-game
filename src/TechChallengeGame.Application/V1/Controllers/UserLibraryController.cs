@@ -1,4 +1,5 @@
 using System.Net;
+using MicroserviceExample.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using TecChallenge.Application.Controllers;
 using TecChallenge.Application.Extensions;
@@ -26,15 +27,25 @@ public class UserLibraryController(
     /// <summary>
     /// Get a user's game library
     /// </summary>
-    /// <param name="userId">The unique identifier of the user</param>
     /// <returns>The user's library containing their game collection</returns>
     /// <response code="200">Returns the user's game library</response>
     /// <response code="404">User library not found</response>
     [HttpGet("{userId:guid}")]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Root<UserLibraryResponse>>> GetUserLibrary(Guid userId)
+    public async Task<ActionResult<Root<UserLibraryResponse>>> GetUserLibrary()
     {
+        if (!HttpContext.IsAuthenticated())
+        {
+            return Unauthorized(
+                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+            );
+        }
+
+        // Extrair informações do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
+
         logger.LogInformation("Obtendo biblioteca do usuário do banco de dados.");
         var userLibrary = await userLibraryRepository.FirstOrDefaultAsync(
             x => x.UserId == userId,
@@ -54,17 +65,25 @@ public class UserLibraryController(
     /// <summary>
     /// Create a library for user
     /// </summary>
-    /// <param name="userId">The unique identifier of the user</param>
     /// <returns>Create user library</returns>
     /// <response code="200">Game successfully added to user's library</response>
     /// <response code="404">User library not found</response>
     [HttpPost("{userId:guid}")]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Root<UserLibraryResponse>>> CreateALibraryForUser(
-        Guid userId
-    )
+    public async Task<ActionResult<Root<UserLibraryResponse>>> CreateALibraryForUser()
     {
+        if (!HttpContext.IsAuthenticated())
+        {
+            return Unauthorized(
+                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+            );
+        }
+
+        // Extrair informações do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
+
         logger.LogInformation("Criando biblioteca do usuário no banco de dados.");
         var userLibrary = UserLibrary.Create(userId);
         var result = await userLibraryService.AddAsync(userLibrary);
@@ -78,7 +97,6 @@ public class UserLibraryController(
     /// <summary>
     /// add game for user
     /// </summary>
-    /// <param name="userId">The unique identifier of the user</param>
     /// <returns>No content if successful</returns>
     /// <response code="200">Game successfully added to user's library</response>
     /// <response code="404">User library not found</response>
@@ -86,10 +104,21 @@ public class UserLibraryController(
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<UserLibraryResponse>>> AddGameToLibrary(
-        Guid userId,
         AddGameToLibraryRequest resquest
     )
+
     {
+        if (!HttpContext.IsAuthenticated())
+        {
+            return Unauthorized(
+                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+            );
+        }
+
+        // Extrair informações do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
+
         logger.LogInformation("Adicionando jogo à biblioteca do usuário no banco de dados.");
         var result = await userLibraryService.AddGameForUser(userId, resquest.GameId);
 
@@ -105,19 +134,28 @@ public class UserLibraryController(
     // <summary>
     /// remove game to user
     /// </summary>
-    /// <param name="userId">The unique identifier of the user</param>
     /// <param name="gameId">The unique identifier of the Game</param>
     /// <returns>No content if successful</returns>
     /// <response code="200">Game successfully added to user's library</response>
     /// <response code="404">User library not found</response>
-    [HttpDelete("{userId:guid}/games/{gameId:guid}")]
+    [HttpDelete("{gameId:guid}")]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Root<UserLibraryResponse>>> RemoveGameFromLibrary(
-        Guid userId,
         Guid gameId
     )
     {
+        if (!HttpContext.IsAuthenticated())
+        {
+            return Unauthorized(
+                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+            );
+        }
+
+        // Extrair informações do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
+
         logger.LogInformation("Removendo jogo da biblioteca do usuário no banco de dados.");
         var result = await userLibraryService.DeleteGameForUser(userId, gameId);
 

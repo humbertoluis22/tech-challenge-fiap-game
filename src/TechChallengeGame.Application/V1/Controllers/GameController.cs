@@ -38,16 +38,7 @@ public class GameController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> GetAllGames()
     {
-        if (!HttpContext.IsAuthenticated())
-        {
-            logger.LogWarning("Tentativa de acesso sem JWT válido");
-            return Unauthorized(
-                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
-            );
-        }
 
-        // Extrair informações do JWT usando os extensions methods
-        var userId = HttpContext.GetUserId();
 
         logger.LogInformation("Chamando rota que recolhe todos os games!");
         var games = (await gameRepository.GetAllAsync()).Select(g => g.MapToDto());

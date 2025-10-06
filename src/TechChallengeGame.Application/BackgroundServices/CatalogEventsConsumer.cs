@@ -36,7 +36,6 @@ namespace TechChallengeGame.Application.BackgroundServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Iniciando SQS Consumer para a fila: {QueueUrl}", _options.QueueUrl);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -59,7 +58,6 @@ namespace TechChallengeGame.Application.BackgroundServices
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Erro inesperado no consumer SQS. Aguardando para tentar novamente.");
                     await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
                 }
             }
@@ -80,7 +78,6 @@ namespace TechChallengeGame.Application.BackgroundServices
                     {
                         // 3. Se for do SNS, extrai a mensagem interna.
                         actualMessageContent = snsMessage.Message;
-                        _logger.LogInformation("Mensagem no formato SNS desembrulhada com sucesso.");
                     }
                 }
                 catch (JsonException)
@@ -93,7 +90,6 @@ namespace TechChallengeGame.Application.BackgroundServices
                 var commandTypeNode = JsonNode.Parse(actualMessageContent)?["CommandType"];
                 var commandType = commandTypeNode?.GetValue<string>();
 
-                _logger.LogInformation("Evento do tipo '{CommandType}' recebido para processamento.", commandType);
 
                 bool success = false;
                 switch (commandType)
@@ -117,7 +113,6 @@ namespace TechChallengeGame.Application.BackgroundServices
                         break;
 
                     default:
-                        _logger.LogWarning("CommandType desconhecido ou ausente na mensagem: {CommandType}", commandType);
                         success = true; // Remove a mensagem da fila se não soubermos o que fazer com ela
                         break;
                 }
@@ -129,7 +124,6 @@ namespace TechChallengeGame.Application.BackgroundServices
             }
             catch (JsonException jsonEx)
             {
-                _logger.LogError(jsonEx, "Erro de desserialização JSON no corpo da mensagem. A mensagem será removida. Conteúdo: {Body}", message.Body);
                 await DeleteMessageFromQueue(message.ReceiptHandle, stoppingToken);
             }
             catch (Exception ex)
@@ -150,7 +144,6 @@ namespace TechChallengeGame.Application.BackgroundServices
 
                 if (result is not true)
                 {
-                    _logger.LogWarning("Falha na lógica de negócio ao adicionar o jogo {GameId} para o usuário {UserId}.", game.GameId, paymentEvent.UserId);
                     allGamesAddedSuccessfully = false;
                 }
             }
@@ -177,7 +170,6 @@ namespace TechChallengeGame.Application.BackgroundServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Falha ao atualizar o HistoryPayment. Fazendo rollback.");
                 await unitOfWork.RollbackAsync(stoppingToken);
                 return false; // Retorna false para tentar novamente
             }
@@ -187,7 +179,6 @@ namespace TechChallengeGame.Application.BackgroundServices
 
         private async Task<bool> HandleRefundAsync(PaymentProcessedEvent refundEvent, CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Iniciando processo de reembolso para o usuário {UserId} referente à transação {PaymentTransactionId}.", refundEvent.UserId, refundEvent.PaymentTransactionId);
 
             using var scope = _scopeFactory.CreateScope();
             var historyPaymentRepo = scope.ServiceProvider.GetRequiredService<IHistoryPaymentRepository>();
@@ -207,14 +198,12 @@ namespace TechChallengeGame.Application.BackgroundServices
 
                 if (historyPayment is null)
                 {
-                    _logger.LogError("Não foi possível encontrar a transação original com PaymentTransactionId {PaymentTransactionId}.", refundEvent.PaymentTransactionId);
                     await unitOfWork.RollbackAsync(stoppingToken);
                     return true; // Mensagem inválida, remove da fila
                 }
 
                 if (historyPayment.TransactionGames != null && historyPayment.TransactionGames.Any())
                 {
-                    _logger.LogInformation("Removendo {GameCount} jogos da biblioteca do usuário.", historyPayment.TransactionGames.Count);
 
                     // --- INÍCIO DA NOVA LÓGICA DE DELEÇÃO ---
 
@@ -226,7 +215,6 @@ namespace TechChallengeGame.Application.BackgroundServices
 
                     if (userLibrary is null)
                     {
-                        _logger.LogWarning("Biblioteca para o usuário {UserId} não encontrada. Não é possível remover os jogos.", refundEvent.UserId);
                         await unitOfWork.RollbackAsync(stoppingToken);
                         return false; // Falha, reprocessa
                     }
@@ -241,7 +229,6 @@ namespace TechChallengeGame.Application.BackgroundServices
                         {
                             // 4. Remove o jogo
                             userLibraryRepo.RemoveLibraryItem(itemToRemove);
-                            _logger.LogInformation("Jogo {GameId} marcado para remoção da biblioteca {UserLibraryId}.", gameTransaction.GameId, userLibrary.Id);
                         }
                         else
                         {
@@ -258,13 +245,11 @@ namespace TechChallengeGame.Application.BackgroundServices
 
                 // Salva TODAS as alterações (deleção dos LibraryItems e atualização do HistoryPayment)
                 await unitOfWork.CommitAsync(stoppingToken);
-                _logger.LogInformation("HistoryPayment {HistoryPaymentId} atualizado para 'Refund' e jogos removidos com sucesso.", historyPayment.Id);
 
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Falha crítica ao processar o reembolso para a transação {PaymentTransactionId}. Fazendo rollback.", refundEvent.PaymentTransactionId);
                 await unitOfWork.RollbackAsync(stoppingToken);
                 return false; // Tenta novamente
             }
@@ -273,7 +258,6 @@ namespace TechChallengeGame.Application.BackgroundServices
         private async Task DeleteMessageFromQueue(string receiptHandle, CancellationToken ct)
         {
             await _sqsClient.DeleteMessageAsync(_options.QueueUrl, receiptHandle, ct);
-            _logger.LogInformation("Mensagem processada e removida da fila SQS.");
         }
     }
 }
