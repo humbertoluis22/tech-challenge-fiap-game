@@ -1,10 +1,6 @@
 ﻿using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Aggregations;
 using Elastic.Clients.Elasticsearch.QueryDsl; // Garanta que esta linha exista!
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
 

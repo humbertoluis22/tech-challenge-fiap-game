@@ -2,8 +2,6 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using TecChallenge.Application.Controllers;
 using TecChallenge.Application.Extensions;
-using TecChallenge.Application.V1.Controllers;
-using TechChallengeGame.Application.Extension;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Requests;
 using TechChallengeGame.Shared.Models.Dtos.Responses;

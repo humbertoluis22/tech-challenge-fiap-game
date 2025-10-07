@@ -1,6 +1,4 @@
-﻿using System;
-using TechChallengeGame.Domain.Entities;
-using Xunit;
+﻿using TechChallengeGame.Domain.Entities;
 
 namespace TechChallengeGame.Tests
 {

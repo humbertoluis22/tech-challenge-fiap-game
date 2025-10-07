@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace TechChallengeGame.Shared.Models.Generics
+﻿namespace TechChallengeGame.Shared.Models.Generics
 {
     public  class Root<T> where T : class
     {

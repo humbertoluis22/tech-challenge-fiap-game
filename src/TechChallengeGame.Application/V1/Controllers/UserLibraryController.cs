@@ -1,16 +1,15 @@
 using System.Net;
-using MicroserviceExample.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using TecChallenge.Application.Controllers;
 using TecChallenge.Application.Extensions;
+using TechChallengeGame.Application.Middlewares;
 using TechChallengeGame.Domain.Entities;
 using TechChallengeGame.Domain.Interfaces;
-using TechChallengeGame.Domain.Services;
 using TechChallengeGame.Shared.Models.Dtos.Requests;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
 using TechChallengeGame.Shared.Models.Generics;
 
-namespace TecChallenge.Application.V1.Controllers;
+namespace TechChallengeGame.Application.V1.Controllers;
 
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/user-libraries")]
@@ -22,7 +21,7 @@ public class UserLibraryController(
     IUserLibraryRepository userLibraryRepository,
     ILogger<UserLibraryController> logger,
     IUserLibraryService userLibraryService
-    ) : MainController(notifier, httpContextAccessor, webHostEnvironment)
+) : MainController(notifier, httpContextAccessor, webHostEnvironment)
 {
     /// <summary>
     /// Get a user's game library
@@ -38,15 +37,15 @@ public class UserLibraryController(
         if (!HttpContext.IsAuthenticated())
         {
             return Unauthorized(
-                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+                new { Message = "Token JWT vï¿½lido ï¿½ obrigatï¿½rio para gerenciar usuï¿½rios" }
             );
         }
 
-        // Extrair informações do JWT usando os extensions methods
+        // Extrair informaï¿½ï¿½es do JWT usando os extensions methods
         var userId_string = HttpContext.GetUserId();
         var userId = Guid.Parse(userId_string);
 
-        logger.LogInformation("Obtendo biblioteca do usuário do banco de dados.");
+        logger.LogInformation("Obtendo biblioteca do usuï¿½rio do banco de dados.");
         var userLibrary = await userLibraryRepository.FirstOrDefaultAsync(
             x => x.UserId == userId,
             false,
@@ -60,7 +59,6 @@ public class UserLibraryController(
 
         return CustomResponse<UserLibraryResponse>(statusCode: HttpStatusCode.NotFound);
     }
-
 
     /// <summary>
     /// Create a library for user
@@ -76,15 +74,15 @@ public class UserLibraryController(
         if (!HttpContext.IsAuthenticated())
         {
             return Unauthorized(
-                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+                new { Message = "Token JWT vï¿½lido ï¿½ obrigatï¿½rio para gerenciar usuï¿½rios" }
             );
         }
 
-        // Extrair informações do JWT usando os extensions methods
+        // Extrair informaï¿½ï¿½es do JWT usando os extensions methods
         var userId_string = HttpContext.GetUserId();
         var userId = Guid.Parse(userId_string);
 
-        logger.LogInformation("Criando biblioteca do usuário no banco de dados.");
+        logger.LogInformation("Criando biblioteca do usuï¿½rio no banco de dados.");
         var userLibrary = UserLibrary.Create(userId);
         var result = await userLibraryService.AddAsync(userLibrary);
 
@@ -92,7 +90,6 @@ public class UserLibraryController(
             ? CustomResponse(data: userLibrary.MapToDto(), statusCode: HttpStatusCode.Created)
             : CustomResponse<UserLibraryResponse>(statusCode: HttpStatusCode.BadRequest);
     }
-
 
     /// <summary>
     /// add game for user
@@ -106,20 +103,19 @@ public class UserLibraryController(
     public async Task<ActionResult<Root<UserLibraryResponse>>> AddGameToLibrary(
         AddGameToLibraryRequest resquest
     )
-
     {
         if (!HttpContext.IsAuthenticated())
         {
             return Unauthorized(
-                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+                new { Message = "Token JWT vï¿½lido ï¿½ obrigatï¿½rio para gerenciar usuï¿½rios" }
             );
         }
 
-        // Extrair informações do JWT usando os extensions methods
+        // Extrair informaï¿½ï¿½es do JWT usando os extensions methods
         var userId_string = HttpContext.GetUserId();
         var userId = Guid.Parse(userId_string);
 
-        logger.LogInformation("Adicionando jogo à biblioteca do usuário no banco de dados.");
+        logger.LogInformation("Adicionando jogo ï¿½ biblioteca do usuï¿½rio no banco de dados.");
         var result = await userLibraryService.AddGameForUser(userId, resquest.GameId);
 
         if (result != null)
@@ -129,7 +125,6 @@ public class UserLibraryController(
 
         return CustomResponse<UserLibraryResponse>(statusCode: HttpStatusCode.NotFound);
     }
-
 
     // <summary>
     /// remove game to user
@@ -141,22 +136,20 @@ public class UserLibraryController(
     [HttpDelete()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Root<UserLibraryResponse>>> RemoveGameFromLibrary(
-        Guid gameId
-    )
+    public async Task<ActionResult<Root<UserLibraryResponse>>> RemoveGameFromLibrary(Guid gameId)
     {
         if (!HttpContext.IsAuthenticated())
         {
             return Unauthorized(
-                new { Message = "Token JWT válido é obrigatório para gerenciar usuários" }
+                new { Message = "Token JWT vï¿½lido ï¿½ obrigatï¿½rio para gerenciar usuï¿½rios" }
             );
         }
 
-        // Extrair informações do JWT usando os extensions methods
+        // Extrair informaï¿½ï¿½es do JWT usando os extensions methods
         var userId_string = HttpContext.GetUserId();
         var userId = Guid.Parse(userId_string);
 
-        logger.LogInformation("Removendo jogo da biblioteca do usuário no banco de dados.");
+        logger.LogInformation("Removendo jogo da biblioteca do usuï¿½rio no banco de dados.");
         var result = await userLibraryService.DeleteGameForUser(userId, gameId);
 
         if (result != null)
@@ -166,7 +159,4 @@ public class UserLibraryController(
 
         return CustomResponse<UserLibraryResponse>(statusCode: HttpStatusCode.NotFound);
     }
-
-
-
 }

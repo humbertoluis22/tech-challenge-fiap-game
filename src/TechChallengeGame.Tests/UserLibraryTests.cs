@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
 using TechChallengeGame.Domain.Entities;
-using Xunit;
 
 namespace TechChallengeGame.Tests
 {
@@ -43,13 +40,13 @@ namespace TechChallengeGame.Tests
             userLibrary.AddGame(gameId, purchasePrice);
 
             // Assert
-            Assert.Single(userLibrary.Items); // Verifica se a coleção tem exatamente 1 item
+            Assert.Single(userLibrary.Items); // Verifica se a coleï¿½ï¿½o tem exatamente 1 item
 
             var addedItem = userLibrary.Items.First();
             Assert.Equal(gameId, addedItem.GameId);
             Assert.Equal(purchasePrice, addedItem.PurchasePrice);
             Assert.Equal(userLibrary.Id, addedItem.UserLibraryId);
-            // Verifica se a data é recente
+            // Verifica se a data ï¿½ recente
             Assert.True((DateTime.UtcNow - addedItem.PurchasedAt) < TimeSpan.FromSeconds(5));
         }
 

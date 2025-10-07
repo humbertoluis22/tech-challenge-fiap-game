@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Elastic.Clients.Elasticsearch;
+﻿using Elastic.Clients.Elasticsearch;
 using TechChallengeGame.Domain.Entities.validations;
 using TechChallengeGame.Domain.Entities;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
-using TechChallengeGame.Shared.Models.Dtos.Events;
 
 namespace TechChallengeGame.Domain.Services
 {

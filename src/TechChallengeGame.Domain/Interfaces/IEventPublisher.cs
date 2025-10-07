@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace TechChallengeGame.Domain.Interfaces;
+﻿namespace TechChallengeGame.Domain.Interfaces;
 
 public interface IEventPublisher
 {

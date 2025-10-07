@@ -1,8 +1,8 @@
-﻿using MicroserviceExample.Middleware;
+﻿using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 using TecChallenge.Application.Controllers;
 using TecChallenge.Application.Extensions;
+using TechChallengeGame.Application.Middlewares;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Requests;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
@@ -23,7 +23,8 @@ namespace TechChallengeGame.Application.V1.Controllers
             IHttpContextAccessor httpContextAccessor,
             IWebHostEnvironment webHostEnvironment,
             ITransactionService transactionService,
-            IHistoryPaymentRepository historyPaymentRepository)
+            IHistoryPaymentRepository historyPaymentRepository
+        )
             : base(notifier, httpContextAccessor, webHostEnvironment)
         {
             _transactionService = transactionService;
@@ -38,7 +39,9 @@ namespace TechChallengeGame.Application.V1.Controllers
         [HttpPost("purchase")]
         [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.BadRequest)]
-        public async Task<ActionResult<Root<HistoryPaymentResponse>>> Purchase(PurchaseRequest request)
+        public async Task<ActionResult<Root<HistoryPaymentResponse>>> Purchase(
+            PurchaseRequest request
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -55,14 +58,19 @@ namespace TechChallengeGame.Application.V1.Controllers
             // Extrair informações do JWT usando os extensions methods
             var userId = HttpContext.GetUserId();
 
-            var historyPayment = await _transactionService.CreatePurchaseAsync(userId,request);
+            var historyPayment = await _transactionService.CreatePurchaseAsync(userId, request);
 
             if (historyPayment is null)
             {
-                return CustomResponse<HistoryPaymentResponse>(statusCode: HttpStatusCode.BadRequest);
+                return CustomResponse<HistoryPaymentResponse>(
+                    statusCode: HttpStatusCode.BadRequest
+                );
             }
 
-            return CustomResponse(data: historyPayment.MapToDto(), statusCode: HttpStatusCode.Created);
+            return CustomResponse(
+                data: historyPayment.MapToDto(),
+                statusCode: HttpStatusCode.Created
+            );
         }
 
         /// <summary>
@@ -75,7 +83,10 @@ namespace TechChallengeGame.Application.V1.Controllers
         [ProducesResponseType(typeof(Root<HistoryPaymentResponse>), (int)HttpStatusCode.NotFound)]
         public async Task<ActionResult<Root<HistoryPaymentResponse>>> GetById(Guid id)
         {
-            var historyPayment = await _historyPaymentRepository.FirstOrDefaultAsync(x => x.Id == id, includes: x => x.TransactionGames);
+            var historyPayment = await _historyPaymentRepository.FirstOrDefaultAsync(
+                x => x.Id == id,
+                includes: x => x.TransactionGames
+            );
 
             if (historyPayment is not null)
                 return CustomResponse(data: historyPayment.MapToDto());
@@ -83,7 +94,6 @@ namespace TechChallengeGame.Application.V1.Controllers
             NotifyError("Transaction not found");
             return CustomResponse<HistoryPaymentResponse>(statusCode: HttpStatusCode.NotFound);
         }
-
 
         // Adicione este novo endpoint dentro da classe TransactionController
         /// <summary>
@@ -111,7 +121,7 @@ namespace TechChallengeGame.Application.V1.Controllers
             // Extrair informações do JWT usando os extensions methods
             var userId = HttpContext.GetUserId();
 
-            var result = await _transactionService.CreateRefundAsync(userId,request);
+            var result = await _transactionService.CreateRefundAsync(userId, request);
 
             if (!result)
             {
@@ -120,9 +130,10 @@ namespace TechChallengeGame.Application.V1.Controllers
             }
 
             // Retorna 202 Accepted sem corpo de resposta, indicando que a solicitação foi aceita.
-            return StatusCode((int)HttpStatusCode.Accepted, new Root<object> { StatusCode = 202, Success = true });
+            return StatusCode(
+                (int)HttpStatusCode.Accepted,
+                new Root<object> { StatusCode = 202, Success = true }
+            );
         }
-
     }
-
 }

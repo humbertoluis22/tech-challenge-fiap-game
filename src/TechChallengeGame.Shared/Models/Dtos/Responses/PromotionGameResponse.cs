@@ -1,5 +1,3 @@
-using System;
-
 namespace TechChallengeGame.Shared.Models.Dtos.Responses;
 
 public class PromotionGameResponse

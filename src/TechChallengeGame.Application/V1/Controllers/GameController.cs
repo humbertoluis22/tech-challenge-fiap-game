@@ -2,15 +2,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TecChallenge.Application.Controllers;
+using TecChallenge.Application.Extensions;
+using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Dtos.Requests;
 using TechChallengeGame.Shared.Models.Dtos.Responses;
-using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Shared.Models.Generics;
-using TecChallenge.Application.Extensions;
-using MicroserviceExample.Middleware;
 
-namespace TecChallenge.Application.V1.Controllers;
-
+namespace TechChallengeGame.Application.V1.Controllers;
 
 //[Authorize(Roles = "Admin")]
 [ApiVersion("1.0")]
@@ -27,7 +25,6 @@ public class GameController(
     IGameService gameService
 ) : MainController(notifier, httpContextAccessor, webHostEnvironment)
 {
-
     /// <summary>
     /// Get all available games
     /// </summary>
@@ -38,13 +35,10 @@ public class GameController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> GetAllGames()
     {
-
-
         logger.LogInformation("Chamando rota que recolhe todos os games!");
         var games = (await gameRepository.GetAllAsync()).Select(g => g.MapToDto());
         return CustomResponse(data: games);
     }
-
 
     /// <summary>
     /// Search for games using Elasticsearch with advanced filtering.
@@ -54,7 +48,9 @@ public class GameController(
     [HttpGet("search")] // Nova Rota: GET /v1/games/search
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> SearchGames([FromQuery] string searchTerm)
+    public async Task<ActionResult<Root<IEnumerable<GameResponse>>>> SearchGames(
+        [FromQuery] string searchTerm
+    )
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -63,17 +59,18 @@ public class GameController(
             return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
         }
 
-        logger.LogInformation("Buscando jogos no Elasticsearch com o termo: {SearchTerm}", searchTerm);
+        logger.LogInformation(
+            "Buscando jogos no Elasticsearch com o termo: {SearchTerm}",
+            searchTerm
+        );
 
         // Usando o gameQueryRepository que busca do Elasticsearch
         var games = await gameQueryRepository.SearchAsync(searchTerm);
 
         if (!games.Any())
         {
-
             NotifyError("No similar games found.");
             return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
-
         }
         return CustomResponse(data: games);
     }
@@ -97,11 +94,9 @@ public class GameController(
         {
             NotifyError("No similar games found.");
             return CustomResponse<IEnumerable<GameResponse>>(statusCode: HttpStatusCode.BadRequest);
-
-        } 
+        }
         return CustomResponse(data: recommendations);
     }
-
 
     // NOVA ROTA DE AGREGAÇÕES ABAIXO
 
@@ -119,8 +114,6 @@ public class GameController(
         var aggregations = await gameQueryRepository.GetGenreAggregationsAsync();
         return CustomResponse(data: aggregations);
     }
-
-
 
     /// <summary>
     /// Get a specific game by its identifier
@@ -143,8 +136,6 @@ public class GameController(
         NotifyError("Game not found");
         return CustomResponse<GameResponse>(statusCode: HttpStatusCode.NotFound);
     }
-
-
 
     /// <summary>
     /// Create a new game

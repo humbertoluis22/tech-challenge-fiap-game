@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TechChallengeGame.Shared.Models.Dtos.Commands
+﻿namespace TechChallengeGame.Shared.Models.Dtos.Commands
 {
     public class GamePromotion
     {

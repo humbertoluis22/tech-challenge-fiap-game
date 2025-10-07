@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace TechChallengeGame.Shared.Models.Dtos.Requests;
