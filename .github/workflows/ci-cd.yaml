@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests
         run: |
-          cd TechChallengeGame.Tests/
+          cd src/TechChallengeGame.Tests/
           dotnet test --no-build --configuration Release --verbosity normal
 
       - name: Configure AWS credentials
