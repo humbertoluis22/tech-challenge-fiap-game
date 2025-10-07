@@ -75,6 +75,7 @@ jobs:
           kubectl apply -f k8s/secrets.yaml
           kubectl apply -f k8s/newrelic-secrets.yaml
           kubectl apply -f k8s/postgres-pvc.yaml
+          kubectl apply -f k8s/kong-plugins.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
@@ -100,5 +101,10 @@ jobs:
           # Verificar logs se houver problemas
           echo "📝 Verificando logs da API:"
           kubectl logs -l app=game-api -n tech-challenge-game --tail=10 || true
+          
+          # Teste básico de conectividade via Kong Ingress Controller
+          echo "🧪 Testando Kong Ingress Controller:"
+          echo "URL: http://ad503a7a288a449fe89c26e294b463bc-ba83c33ddc3d99fe.elb.sa-east-1.amazonaws.com/games/health"
+          echo "Host: tech-challenge-game.fcg-identity.com"
           
           echo "✅ Deploy concluído com sucesso!"

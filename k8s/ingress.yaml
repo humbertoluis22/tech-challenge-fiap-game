@@ -1,24 +1,23 @@
-# Tech Challenge Game API Ingress
+# Kong Ingress - Path-based Routing with Strip Path
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: game-api-ingress
+  name: games-api-ingress
   namespace: tech-challenge-game
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    # AWS Load Balancer Controller annotations
-    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    # Kong strip-path annotation - removes the prefix before forwarding
+    konghq.com/strip-path: "true"
+    # Kong plugins for this Ingress
+    konghq.com/plugins: games-cors, games-correlation-id, games-rate-limiting
 spec:
-  ingressClassName: nginx
+  # Use Kong Ingress Controller
+  ingressClassName: kong
   rules:
   - host: tech-challenge-game.fcg-identity.com
     http:
       paths:
-      - path: /
+      # Games Service - External: /games/* -> Internal: /*
+      - path: /games
         pathType: Prefix
         backend:
           service:
