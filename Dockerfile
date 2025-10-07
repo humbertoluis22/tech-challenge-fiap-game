@@ -14,7 +14,7 @@ COPY *.sln .
 
 # Copy the source code (this creates /src/TecChallenge.Application, etc.)
 COPY src/ ./src/
-COPY TechChallengeGame.Tests/ ./TechChallengeGame.Tests/
+# COPY TechChallengeGame.Tests/ ./TechChallengeGame.Tests/
 
 # Restore dependencies for the entire solution
 RUN dotnet restore "TechChallengeGame.sln"
