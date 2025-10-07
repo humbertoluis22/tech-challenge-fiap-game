@@ -4,10 +4,32 @@ metadata:
   name: game-api-config
   namespace: tech-challenge-game
 data:
+  # ASP.NET Core Configuration
   ASPNETCORE_ENVIRONMENT: "Production"
   ASPNETCORE_URLS: "http://*:80"
+  DOTNET_RUNNING_IN_CONTAINER: "true"
+  
+  # Elasticsearch Configuration
   Elasticsearch__Uri: "https://my-elasticsearch-project-ba9d4e.es.us-central1.gcp.elastic.cloud"
+  Elasticsearch__Id: "my-elasticsearch-project-ba9d4e"
+  
+  # AWS SQS/SNS Configuration
   SqsConsumer__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/catalog-events-queue"
   SnsPublisher__TopicArn: "arn:aws:sns:sa-east-1:208452488125:fcg-events"
   SqsPublisher__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/payment-events-queue"
+  
+  # Serilog Configuration
+  Serilog__MinimumLevel__Default: "Warning"
+  Serilog__MinimumLevel__Override__Microsoft: "Warning"
+  Serilog__MinimumLevel__Override__System: "Warning"
+  Serilog__MinimumLevel__Override__Microsoft.EntityFrameworkCore: "Error"
   Serilog__Properties__ServiceName: "tech-challenge-game"
+  Serilog__WriteTo__0__Name: "Console"
+  Serilog__WriteTo__1__Name: "Elasticsearch"
+  Serilog__WriteTo__1__Args__nodeUris: "https://my-elasticsearch-project-ba9d4e.es.us-central1.gcp.elastic.cloud"
+  Serilog__WriteTo__1__Args__indexFormat: "tech-challenge-game-logs-{0:yyyy.MM.dd}"
+  Serilog__WriteTo__1__Args__autoRegisterTemplate: "true"
+  Serilog__WriteTo__1__Args__typeName: ""
+  
+  # Health Check Configuration
+  HEALTHCHECKS_UI_ENABLED: "true"

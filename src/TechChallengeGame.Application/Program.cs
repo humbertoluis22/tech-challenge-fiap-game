@@ -1,4 +1,9 @@
-﻿using Elastic.Clients.Elasticsearch;
+﻿using System.Globalization;
+using Amazon.SimpleNotificationService;
+using Amazon.SQS;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
+using MicroserviceExample.Middleware;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,27 +11,18 @@ using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
-using Serilog.Events;
 using Serilog.Sinks.Elasticsearch;
-using System.Globalization;
 using TecChallenge.Application.Configurations;
+using TechChallengeGame.Application.BackgroundServices;
+using TechChallengeGame.Application.Extension;
+using TechChallengeGame.Application.HealthChecks;
+using TechChallengeGame.Application.Services;
 using TechChallengeGame.Data.Contexts;
 using TechChallengeGame.Data.Repositories;
 using TechChallengeGame.Data.UnitOfWork;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Domain.Notifications;
 using TechChallengeGame.Domain.Services;
-using Amazon.SQS;
-using TechChallengeGame.Application.BackgroundServices;
-using Amazon.SimpleNotificationService;
-using TechChallengeGame.Application.Services;
-using Amazon.Extensions.NETCore.Setup;
-using Elastic.Transport;
-using TechChallengeGame.Application.Middlewares;
-using MicroserviceExample.Middleware;
-using Microsoft.OpenApi.Models;
-using System.Reflection;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,42 +32,49 @@ builder
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddEnvironmentVariables();
 
-
-builder.Host.UseSerilog((context, services, configuration) => configuration
-    .ReadFrom.Configuration(context.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
-    .Enrich.WithProperty("X-Correlation-ID", context.HostingEnvironment.ApplicationName) 
-    .WriteTo.Console()
-    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(context.Configuration["Elasticsearch:Uri"]))
-    {
-        IndexFormat = "fcg-logs-{0:yyyy.MM.dd}",
-        TypeName = null,
-        AutoRegisterTemplate = true,
-        OverwriteTemplate = true,
-        NumberOfShards = 1,
-        NumberOfReplicas = 1,
-        ModifyConnectionSettings = x => x.ApiKeyAuthentication(context.Configuration["Elasticsearch:Id"], context.Configuration["Elasticsearch:ApiKey"])
-    })
+builder.Host.UseSerilog(
+    (context, services, configuration) =>
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithProperty("X-Correlation-ID", context.HostingEnvironment.ApplicationName)
+            .WriteTo.Console()
+            .WriteTo.Elasticsearch(
+                new ElasticsearchSinkOptions(new Uri(context.Configuration["Elasticsearch:Uri"]))
+                {
+                    IndexFormat = "fcg-logs-{0:yyyy.MM.dd}",
+                    TypeName = null,
+                    AutoRegisterTemplate = true,
+                    OverwriteTemplate = true,
+                    NumberOfShards = 1,
+                    NumberOfReplicas = 1,
+                    ModifyConnectionSettings = x =>
+                        x.ApiKeyAuthentication(
+                            context.Configuration["Elasticsearch:Id"],
+                            context.Configuration["Elasticsearch:ApiKey"]
+                        ),
+                }
+            )
 );
-
 
 var elasticUri = builder.Configuration["Elasticsearch:Uri"];
 var apiKey = builder.Configuration["Elasticsearch:ApiKey"];
 
-builder.Services.AddSingleton<ElasticsearchClient>(sp =>
+builder.Services.AddSingleton(sp =>
 {
     var settings = new ElasticsearchClientSettings(new Uri(elasticUri))
-        .DefaultIndex("games").Authentication(new ApiKey(apiKey));
+        .DefaultIndex("games")
+        .Authentication(new ApiKey(apiKey));
 
     return new ElasticsearchClient(settings);
 });
 
-
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(
+    options
+        .UseNpgsql(
             builder.Configuration.GetConnectionString("DefaultConnection"),
             o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
         )
@@ -85,7 +88,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddScoped<INotifier, Notifier>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
-builder.Services.AddScoped<IGameQueryRepository, GameQueryRepository>(); 
+builder.Services.AddScoped<IGameQueryRepository, GameQueryRepository>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
@@ -101,40 +104,29 @@ builder.Services.AddSwaggerConfiguration();
 
 builder.Services.AddHttpContextAccessor();
 
-
-// Configuração da AWS SNS
-
 builder.Services.AddSingleton<IAmazonSQS>(sp =>
 {
     var awsOptions = builder.Configuration.GetAWSOptions();
-    awsOptions.Region = Amazon.RegionEndpoint.SAEast1; // Força a região US East (Ohio)
+    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
     return awsOptions.CreateServiceClient<IAmazonSQS>();
 });
 
-// Adiciona o cliente SNS configurado para a região correta
-builder.Services.AddSingleton<IAmazonSimpleNotificationService>(sp =>
+builder.Services.AddSingleton(sp =>
 {
     var awsOptions = builder.Configuration.GetAWSOptions();
-    awsOptions.Region = Amazon.RegionEndpoint.SAEast1; // Força a região US East (Ohio)
+    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
     return awsOptions.CreateServiceClient<IAmazonSimpleNotificationService>();
 });
 
-// Registra as opções para o publisher ler do appsettings.json
 builder.Services.Configure<SnsPublisherOptions>(
-    builder.Configuration.GetSection(SnsPublisherOptions.SectionName));
+    builder.Configuration.GetSection(SnsPublisherOptions.SectionName)
+);
 
-// Registra nossa abstração do publisher
-//builder.Services.AddScoped<IEventPublisher, SnsEventPublisher>();
-
-
-//  Registra a classe de opções para o nosso consumer ler do appsettings.json
 builder.Services.Configure<SqsConsumerOptions>(
-    builder.Configuration.GetSection(SqsConsumerOptions.SectionName));
+    builder.Configuration.GetSection(SqsConsumerOptions.SectionName)
+);
 
-//  Registra o consumer como um serviço que roda em background
 builder.Services.AddHostedService<CatalogEventsConsumer>();
-
-
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -143,10 +135,9 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
 });
 
-
 builder.Services.AddVersionedApiExplorer(options =>
 {
-    options.GroupNameFormat = "'v'VVV"; // v1, v2, v3...
+    options.GroupNameFormat = "'v'VVV";
     options.SubstituteApiVersionInUrl = true;
 });
 
@@ -171,7 +162,7 @@ builder.Services.AddExceptionHandler(options =>
         var error = new
         {
             Message = "Ocorreu um erro inesperado.",
-            Detail = context.Features.Get<IExceptionHandlerPathFeature>()?.Error.Message
+            Detail = context.Features.Get<IExceptionHandlerPathFeature>()?.Error.Message,
         };
 
         await context.Response.WriteAsJsonAsync(error);
@@ -179,20 +170,64 @@ builder.Services.AddExceptionHandler(options =>
 });
 
 builder.Services.AddHealthCheckConfig();
+builder.Services.AddHealthChecks().AddCheck<DatabaseMigrationHealthCheck>("database-migration");
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("Verificando status do banco de dados...");
+
+        // Obtém status detalhado do banco
+        var dbStatus = await context.GetDatabaseStatusAsync(logger);
+
+        if (!dbStatus.CanConnect)
+        {
+            logger.LogError("Não foi possível conectar ao banco de dados");
+            if (app.Environment.IsProduction())
+            {
+                throw new InvalidOperationException("Database connection failed");
+            }
+        }
+        else
+        {
+            logger.LogInformation("Status do banco: {Status}", dbStatus);
+
+            // Aplica migrations pendentes se houver
+            if (dbStatus.HasPendingMigrations)
+            {
+                var success = await context.ApplyPendingMigrationsAsync(logger);
+                if (!success && app.Environment.IsProduction())
+                {
+                    throw new InvalidOperationException("Failed to apply database migrations");
+                }
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Banco de dados já está atualizado (versão: {Version})",
+                    dbStatus.CurrentVersion ?? "inicial"
+                );
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erro durante inicialização do banco: {Message}", ex.Message);
+
+        if (app.Environment.IsProduction())
+        {
+            throw;
+        }
+    }
+}
+
 app.UseMiddleware<JwtMiddleware>();
-
-
-
-//Aplica as migrações automáticas ao subir a API
-// funciona no docker
-//using (var scope = app.Services.CreateScope())
-//{
-//    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//    db.Database.Migrate();
-//}
 
 app.UseApiConfig(app.Environment);
 
@@ -200,7 +235,6 @@ var apiVersionDescriptionProvider =
     app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 app.UseSwaggerConfig(apiVersionDescriptionProvider);
 app.UseExceptionHandler();
-
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

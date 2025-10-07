@@ -1,14 +1,11 @@
-ï»¿using System;
-using System.Collections.Generic;
+using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TechChallengeGame.Domain.Entities;
 using Xunit;
 
 namespace TechChallengeGame.Tests
 {
-    [TestClass]
-    public class userLibraryTests
+    public class UserLibraryTests
     {
         #region Factory Method Tests (Create)
 
@@ -46,13 +43,13 @@ namespace TechChallengeGame.Tests
             userLibrary.AddGame(gameId, purchasePrice);
 
             // Assert
-            Assert.Single(userLibrary.Items); // Verifica se a coleÃ§Ã£o tem exatamente 1 item
+            Assert.Single(userLibrary.Items); // Verifica se a coleção tem exatamente 1 item
 
             var addedItem = userLibrary.Items.First();
             Assert.Equal(gameId, addedItem.GameId);
             Assert.Equal(purchasePrice, addedItem.PurchasePrice);
             Assert.Equal(userLibrary.Id, addedItem.UserLibraryId);
-            // Verifica se a data Ã© recente
+            // Verifica se a data é recente
             Assert.True((DateTime.UtcNow - addedItem.PurchasedAt) < TimeSpan.FromSeconds(5));
         }
 
@@ -134,5 +131,7 @@ namespace TechChallengeGame.Tests
             Assert.Null(removedItem);
             Assert.Empty(userLibrary.Items);
         }
+
+        #endregion
     }
 }

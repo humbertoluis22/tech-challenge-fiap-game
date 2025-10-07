@@ -1,0 +1,27 @@
+# Tech Challenge Game API Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: game-api-ingress
+  namespace: tech-challenge-game
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    # AWS Load Balancer Controller annotations
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: tech-challenge-game.fcg-identity.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: game-api-service
+            port:
+              number: 80

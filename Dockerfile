@@ -35,8 +35,6 @@ RUN apk add --no-cache icu-libs
 
 COPY --from=build /app/publish .
 
-# This is good practice for security if you need it
-
 RUN chown -R 0:0 /app && \
     chmod -R g+w /app
 

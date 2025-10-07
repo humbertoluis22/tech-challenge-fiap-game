@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TechChallengeGame.Shared", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{94E0AA34-54E8-4DBC-8849-DA00B93E9A15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TechChallengeGame.Tests", "TechChallengeGame.Tests\TechChallengeGame.Tests.csproj", "{AAE231F0-BBA3-4464-8988-7D4DE2BAB724}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TechChallengeGame.Tests", "src\TechChallengeGame.Tests\TechChallengeGame.Tests.csproj", "{AAE231F0-BBA3-4464-8988-7D4DE2BAB724}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-games-config
+  namespace: identity-system
+data:
+  games-service.yaml: |
+    _format_version: "3.0"
+    services:
+    - name: tech-challenge-game-service
+      url: http://game-api-service.tech-challenge-game.svc.cluster.local
+      protocol: http
+      port: 80
+      path: /
+      retries: 5
+      connect_timeout: 60000
+      write_timeout: 60000
+      read_timeout: 60000
+      routes:
+      - name: games-api-route
+        paths:
+        - /api/games
+        methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        strip_path: false
+        preserve_host: false
+      - name: games-health-route
+        paths:
+        - /api/v1/database
+        methods:
+        - GET
+        - POST
+        strip_path: false
+        preserve_host: false
+      - name: games-all-route
+        paths:
+        - /games
+        methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        strip_path: true
+        preserve_host: false
+      plugins:
+      - name: cors
+        config:
+          origins:
+          - "*"
+          methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+          headers:
+          - Accept
+          - Accept-Version
+          - Content-Length
+          - Content-MD5
+          - Content-Type
+          - Date
+          - X-Auth-Token
+          - Authorization
+          exposed_headers:
+          - X-Auth-Token
+          credentials: true
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 1000
+          hour: 10000
+          policy: local
+      - name: file-log
+        config:
+          path: /tmp/games-api.log
+          reopen: true
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-games-endpoints
+  namespace: identity-system
+data:
+  README.md: |
+    # Kong Gateway - Tech Challenge Game API Configuration
+    
+    ## Services Configured
+    - **Service**: tech-challenge-game-service
+    - **Upstream**: game-api-service.tech-challenge-game.svc.cluster.local:80
+    
+    ## Routes Available
+    
+    ### 1. Games API Route
+    - **Path**: `/api/games`
+    - **Methods**: GET, POST, PUT, DELETE, PATCH
+    - **Strip Path**: false
+    - **URL**: http://kong.fcg-identity.com/api/games
+    
+    ### 2. Database Health Route  
+    - **Path**: `/api/v1/database`
+    - **Methods**: GET, POST
+    - **Strip Path**: false
+    - **URL**: http://kong.fcg-identity.com/api/v1/database/health
+    
+    ### 3. Games All Route (Fallback)
+    - **Path**: `/games`
+    - **Methods**: GET, POST, PUT, DELETE, PATCH
+    - **Strip Path**: true
+    - **URL**: http://kong.fcg-identity.com/games/api/v1/database/status
+    
+    ## Plugins Enabled
+    
+    ### CORS Plugin
+    - **Origins**: * (all origins allowed)
+    - **Methods**: GET, POST, PUT, DELETE, PATCH, OPTIONS
+    - **Credentials**: enabled
+    - **Max Age**: 3600 seconds
+    
+    ### Rate Limiting Plugin
+    - **Minute**: 1000 requests/minute
+    - **Hour**: 10000 requests/hour
+    - **Policy**: local
+    
+    ### File Log Plugin
+    - **Path**: /tmp/games-api.log
+    - **Reopen**: true
+    
+    ## Testing Examples
+    
+    ```bash
+    # Health Check
+    curl http://kong.fcg-identity.com/api/v1/database/health
+    
+    # Database Status
+    curl http://kong.fcg-identity.com/games/api/v1/database/status
+    
+    # Database Migrations Applied
+    curl http://kong.fcg-identity.com/games/api/v1/database/migrations/applied
+    
+    # Games API (when implemented)
+    curl http://kong.fcg-identity.com/api/games
+    ```
+    
+    ## Architecture
+    
+    ```
+    Internet → AWS ALB → Kong Gateway → Game API Service → PostgreSQL
+                  ↓
+              Kong Admin API (8001)
+                  ↓  
+              Konga UI (Management)
+    ```
+    
+    ## Monitoring
+    - Kong Admin API: http://kong-admin.fcg-identity.com
+    - Konga Management UI: http://konga.fcg-identity.com
+    - Service Logs: Available in Kong Gateway pods
+    - API Logs: /tmp/games-api.log inside Kong containers

@@ -9,7 +9,7 @@ on:
 
 env:
   ECR_REPOSITORY: tech-challenge-fiap-game
-  EKS_CLUSTER_NAME: fcg-identity # Utilize o mesmo cluster
+  EKS_CLUSTER_NAME: fcg-identity
   AWS_REGION: sa-east-1
 
 jobs:
@@ -66,20 +66,39 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          sed -i 's|SEU_REGISTRY_ECR/tech-challenge-fiap-game:latest|${{ steps.build-image.outputs.image }}|g' k8s/deployment.yaml
+          # Substituir placeholder da imagem no deployment
+          sed -i 's|208452488125.dkr.ecr.sa-east-1.amazonaws.com/tech-challenge-fiap-game:latest|${{ steps.build-image.outputs.image }}|g' k8s/deployment.yaml
           
+          # Aplicar manifests em ordem
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
           kubectl apply -f k8s/secrets.yaml
+          kubectl apply -f k8s/newrelic-secrets.yaml
+          kubectl apply -f k8s/postgres-pvc.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
 
       - name: Verify Deployment
         run: |
-          echo "Verificando status do deploy..."
-          kubectl get pods -n tech-challenge-game
-          kubectl get svc -n tech-challenge-game
+          echo "🚀 Verificando status do deploy..."
           
+          # Aguardar PostgreSQL estar pronto
+          echo "⏳ Aguardando PostgreSQL..."
+          kubectl wait --for=condition=ready pod -l app=postgres-db -n tech-challenge-game --timeout=300s
+          
+          # Aguardar API estar pronta
+          echo "⏳ Aguardando Game API..."
           kubectl wait --for=condition=ready pod -l app=game-api -n tech-challenge-game --timeout=300s
           
-          echo "Deploy concluído com sucesso!"
+          # Verificar status final
+          echo "📊 Status dos recursos:"
+          kubectl get pods -n tech-challenge-game -o wide
+          kubectl get svc -n tech-challenge-game
+          kubectl get ingress -n tech-challenge-game
+          
+          # Verificar logs se houver problemas
+          echo "📝 Verificando logs da API:"
+          kubectl logs -l app=game-api -n tech-challenge-game --tail=10 || true
+          
+          echo "✅ Deploy concluído com sucesso!"

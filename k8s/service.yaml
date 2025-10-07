@@ -1,8 +1,29 @@
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+  namespace: tech-challenge-game
+  labels:
+    app: postgres-db
+spec:
+  selector:
+    app: postgres-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  type: ClusterIP
+---
+# Game API Service
 apiVersion: v1
 kind: Service
 metadata:
   name: game-api-service
   namespace: tech-challenge-game
+  labels:
+    app: game-api
 spec:
   selector:
     app: game-api
@@ -10,4 +31,5 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
+      name: http
   type: ClusterIP

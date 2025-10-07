@@ -1,8 +1,86 @@
+# PostgreSQL Database Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-db
+  namespace: tech-challenge-game
+  labels:
+    app: postgres-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postgres-db
+  template:
+    metadata:
+      labels:
+        app: postgres-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "TechChallengeGame"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: game-api-secrets
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        ports:
+        - containerPort: 5432
+          name: postgres
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U postgres -d TechChallengeGame -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U postgres -d TechChallengeGame -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+# Game API Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: game-api
   namespace: tech-challenge-game
+  labels:
+    app: game-api
 spec:
   replicas: 1
   selector:
@@ -13,27 +91,39 @@ spec:
       labels:
         app: game-api
     spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:16-alpine
+        command:
+          - /bin/sh
+          - -c
+          - |
+            until pg_isready -h postgres-db -p 5432 -U postgres; do
+              echo "Waiting for PostgreSQL..."
+              sleep 2
+            done
+            echo "PostgreSQL is ready!"
       containers:
       - name: game-api
-        image: SEU_REGISTRY_ECR/tech-challenge-fiap-game:latest # Substitua pelo seu Registry ECR
+        image: 208452488125.dkr.ecr.sa-east-1.amazonaws.com/tech-challenge-fiap-game:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
+          name: http
         envFrom:
         - configMapRef:
             name: game-api-config
         - secretRef:
             name: game-api-secrets
-        
-        # ---- INÍCIO: Configuração New Relic Adicionada ----
         env:
+        # New Relic Configuration
         - name: NEW_RELIC_LICENSE_KEY
           valueFrom:
             secretKeyRef:
               name: newrelic-secrets
               key: license-key
         - name: NEW_RELIC_APP_NAME
-          value: "tech-challenge-game-api" # Ajustado para o nome do projeto atual
+          value: "tech-challenge-game-api"
         - name: CORECLR_ENABLE_PROFILING
           value: "1"
         - name: CORECLR_PROFILER
@@ -46,14 +136,12 @@ spec:
           value: "true"
         - name: NEW_RELIC_LOG_LEVEL
           value: "info"
-        # ---- FIM: Configuração New Relic Adicionada ----
-
         resources:
           requests:
-            memory: "256Mi"
+            memory: "512Mi"
             cpu: "250m"
           limits:
-            memory: "512Mi"
+            memory: "1Gi"
             cpu: "500m"
         readinessProbe:
           httpGet:
@@ -61,9 +149,13 @@ spec:
             port: 80
           initialDelaySeconds: 30
           periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /health
             port: 80
           initialDelaySeconds: 60
           periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 3
