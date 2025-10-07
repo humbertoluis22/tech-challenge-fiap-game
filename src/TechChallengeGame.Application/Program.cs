@@ -3,19 +3,20 @@ using Amazon.SimpleNotificationService;
 using Amazon.SQS;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
-using MicroserviceExample.Middleware;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using NewRelic.LogEnrichers.Serilog;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
 using TecChallenge.Application.Configurations;
 using TechChallengeGame.Application.BackgroundServices;
 using TechChallengeGame.Application.Extension;
 using TechChallengeGame.Application.HealthChecks;
+using TechChallengeGame.Application.Middlewares;
 using TechChallengeGame.Application.Services;
 using TechChallengeGame.Data.Contexts;
 using TechChallengeGame.Data.Repositories;
@@ -39,6 +40,7 @@ builder.Host.UseSerilog(
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
+            .Enrich.WithNewRelicLogsInContext()
             .Enrich.WithProperty("X-Correlation-ID", context.HostingEnvironment.ApplicationName)
             .WriteTo.Console()
             .WriteTo.Elasticsearch(
@@ -227,7 +229,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseMiddleware<JwtMiddleware>();
+app.UseJwtMiddleware();
 
 app.UseApiConfig(app.Environment);
 

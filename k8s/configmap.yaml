@@ -19,11 +19,17 @@ data:
   SqsPublisher__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/payment-events-queue"
   
   # Serilog Configuration
+  Serilog__Using__0: "Serilog.Sinks.Console"
+  Serilog__Using__1: "Serilog.Sinks.Elasticsearch"
+  Serilog__Using__2: "NewRelic.LogEnrichers.Serilog"
   Serilog__MinimumLevel__Default: "Warning"
   Serilog__MinimumLevel__Override__Microsoft: "Warning"
   Serilog__MinimumLevel__Override__System: "Warning"
   Serilog__MinimumLevel__Override__Microsoft.EntityFrameworkCore: "Error"
-  Serilog__Properties__ServiceName: "tech-challenge-game"
+  Serilog__Properties__ServiceName: "fcg-catalog-service"
+  Serilog__Enrich__0: "FromLogContext"
+  Serilog__Enrich__1: "WithMachineName"
+  Serilog__Enrich__2: "WithNewRelicLogsInContext"
   Serilog__WriteTo__0__Name: "Console"
   Serilog__WriteTo__1__Name: "Elasticsearch"
   Serilog__WriteTo__1__Args__nodeUris: "https://my-elasticsearch-project-ba9d4e.es.us-central1.gcp.elastic.cloud"
