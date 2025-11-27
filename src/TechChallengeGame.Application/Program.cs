@@ -24,14 +24,73 @@ using TechChallengeGame.Data.UnitOfWork;
 using TechChallengeGame.Domain.Interfaces;
 using TechChallengeGame.Domain.Notifications;
 using TechChallengeGame.Domain.Services;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using System.Diagnostics;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+/// 1.Definição de Recursos(Metadados do Serviço)
+var serviceName = "tech-challenge-game-api";
+var serviceVersion = "1.0.0";
+var appResourceBuilder = ResourceBuilder.CreateDefault()
+    .AddService(serviceName: serviceName, serviceVersion: serviceVersion);
+
+// 2. Criação da Fonte de Atividade para Instrumentação Manual
+// É necessário registar esta fonte para que o OpenTelemetry a escute.
+var myActivitySource = new ActivitySource(serviceName);
+builder.Services.AddSingleton(myActivitySource);
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracer => tracer
+        .SetResourceBuilder(appResourceBuilder)
+        // Auto-instrumentação
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        // Instrumentação Manual (Registo da fonte criada acima)
+        .AddSource(serviceName)
+        .AddOtlpExporter(opts =>
+        {
+            opts.Endpoint = new Uri("http://otel-lgtm:4317"); // Endpoint do container LGTM
+        }))
+    .WithMetrics(metrics => metrics
+        .SetResourceBuilder(appResourceBuilder)
+        // Auto-instrumentação de métricas (Runtime, HTTP, etc.)
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddOtlpExporter(opts =>
+        {
+            opts.Endpoint = new Uri("http://otel-lgtm:4317");
+        }));
+
 
 builder
     .Configuration.SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddEnvironmentVariables();
+
+// 3. Configuração de Logs
+builder.Logging.ClearProviders();
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.SetResourceBuilder(
+        ResourceBuilder.CreateDefault()
+            .AddService(
+                serviceName: serviceName,
+                serviceVersion: serviceVersion
+            )
+    );
+
+    options.AddOtlpExporter(otlp =>
+    {
+        otlp.Endpoint = new Uri("http://otel-lgtm:4317");
+    });
+});
 
 builder.Host.UseSerilog(
     (context, services, configuration) =>
@@ -106,29 +165,29 @@ builder.Services.AddSwaggerConfiguration();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddSingleton<IAmazonSQS>(sp =>
-{
-    var awsOptions = builder.Configuration.GetAWSOptions();
-    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
-    return awsOptions.CreateServiceClient<IAmazonSQS>();
-});
+//builder.Services.AddSingleton<IAmazonSQS>(sp =>
+//{
+//    var awsOptions = builder.Configuration.GetAWSOptions();
+//    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
+//    return awsOptions.CreateServiceClient<IAmazonSQS>();
+//});
 
-builder.Services.AddSingleton(sp =>
-{
-    var awsOptions = builder.Configuration.GetAWSOptions();
-    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
-    return awsOptions.CreateServiceClient<IAmazonSimpleNotificationService>();
-});
+//builder.Services.AddSingleton(sp =>
+//{
+//    var awsOptions = builder.Configuration.GetAWSOptions();
+//    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
+//    return awsOptions.CreateServiceClient<IAmazonSimpleNotificationService>();
+//});
 
-builder.Services.Configure<SnsPublisherOptions>(
-    builder.Configuration.GetSection(SnsPublisherOptions.SectionName)
-);
+//builder.Services.Configure<SnsPublisherOptions>(
+//    builder.Configuration.GetSection(SnsPublisherOptions.SectionName)
+//);
 
-builder.Services.Configure<SqsConsumerOptions>(
-    builder.Configuration.GetSection(SqsConsumerOptions.SectionName)
-);
+//builder.Services.Configure<SqsConsumerOptions>(
+//    builder.Configuration.GetSection(SqsConsumerOptions.SectionName)
+//);
 
-builder.Services.AddHostedService<CatalogEventsConsumer>();
+//builder.Services.AddHostedService<CatalogEventsConsumer>();
 
 builder.Services.AddApiVersioning(options =>
 {

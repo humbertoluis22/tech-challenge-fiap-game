@@ -4,7 +4,7 @@ services:
     container_name: postgres-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_PASSWORD: TechChallenge2024@
       POSTGRES_DB: TechChallengeGame
     ports:
       - "5432:5432"
@@ -25,16 +25,46 @@ services:
         DOTNET_RUNNING_IN_CONTAINER: "true"
         ASPNETCORE_URLS: "http://+:5001" 
 
-        AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-        AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-        AWS_REGION: ${AWS_REGION}
+        OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-lgtm:4317"
+
+        Serilog__MinimumLevel__Default: Information
+        Serilog__MinimumLevel__Override__Microsoft: Information
+
+
+        ConnectionStrings__DefaultConnection: "Host=postgres-db;Port=5432;Database=TechChallengeGame;Username=postgres;Password=TechChallenge2024@"
+
+    #     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    #     AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    #     AWS_REGION: ${AWS_REGION}
     ports:
       - "5001:5001"
     restart: on-failure
     depends_on:
       postgres-db:
         condition: service_healthy
+      otel-lgtm:
+        condition: service_started
       
+  # Stack de Observabilidade (Loki, Grafana, Tempo, Mimir num só)
+  otel-lgtm:
+    image: grafana/otel-lgtm
+    container_name: otel-lgtm
+    # Habilitar persistência se desejar manter dados entre reinícios (opcional para estudo)
+    # volumes:
+    #   - lgtm-data:/data
+    
+    # Montagem dos Dashboards Automatizados
+    ports:
+      - "3000:3000"   # Grafana
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+    volumes:
+      - ./otelcol-config.yaml:/etc/otelcol/config.yaml:ro
+
+
 volumes:
   postgres_data:
 

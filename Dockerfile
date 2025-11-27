@@ -20,9 +20,9 @@ COPY src/ ./src/
 RUN dotnet restore "TechChallengeGame.sln"
 
 # Publish the application
-RUN dotnet publish src/TechChallengeGame.Application/TechChallengeGame.Application.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/TechChallengeGame.Application/TechChallengeGame.Application.csproj -c Release -o /app/publish 
 
-RUN dotnet tool install --global dotnet-ef
+# RUN dotnet tool install --global dotnet-ef
 
 # --- Final Stage ---
 FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION}-alpine AS final
@@ -38,7 +38,8 @@ COPY --from=build /app/publish .
 RUN chown -R 0:0 /app && \
     chmod -R g+w /app
 
-EXPOSE 80
+# EXPOSE 80
+EXPOSE 5001
 
 # The entrypoint should now correctly point to your application's DLL
 ENTRYPOINT ["dotnet", "TechChallengeGame.Application.dll"]
