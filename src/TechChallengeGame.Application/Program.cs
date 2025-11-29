@@ -62,6 +62,7 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
         .AddOtlpExporter(opts =>
         {
             opts.Endpoint = new Uri("http://otel-lgtm:4317");
@@ -74,51 +75,13 @@ builder
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddEnvironmentVariables();
 
-// 3. Configuração de Logs
-builder.Logging.ClearProviders();
-builder.Logging.AddOpenTelemetry(options =>
-{
-    options.SetResourceBuilder(
-        ResourceBuilder.CreateDefault()
-            .AddService(
-                serviceName: serviceName,
-                serviceVersion: serviceVersion
-            )
-    );
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName());
 
-    options.AddOtlpExporter(otlp =>
-    {
-        otlp.Endpoint = new Uri("http://otel-lgtm:4317");
-    });
-});
-
-builder.Host.UseSerilog(
-    (context, services, configuration) =>
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich.FromLogContext()
-            .Enrich.WithMachineName()
-            .Enrich.WithNewRelicLogsInContext()
-            .Enrich.WithProperty("X-Correlation-ID", context.HostingEnvironment.ApplicationName)
-            .WriteTo.Console()
-            .WriteTo.Elasticsearch(
-                new ElasticsearchSinkOptions(new Uri(context.Configuration["Elasticsearch:Uri"]))
-                {
-                    IndexFormat = "fcg-logs-{0:yyyy.MM.dd}",
-                    TypeName = null,
-                    AutoRegisterTemplate = true,
-                    OverwriteTemplate = true,
-                    NumberOfShards = 1,
-                    NumberOfReplicas = 1,
-                    ModifyConnectionSettings = x =>
-                        x.ApiKeyAuthentication(
-                            context.Configuration["Elasticsearch:Id"],
-                            context.Configuration["Elasticsearch:ApiKey"]
-                        ),
-                }
-            )
-);
 
 var elasticUri = builder.Configuration["Elasticsearch:Uri"];
 var apiKey = builder.Configuration["Elasticsearch:ApiKey"];

@@ -27,8 +27,8 @@ services:
 
         OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-lgtm:4317"
 
-        Serilog__MinimumLevel__Default: Information
-        Serilog__MinimumLevel__Override__Microsoft: Information
+        Serilog__MinimumLevel__Default: Warning
+        Serilog__MinimumLevel__Override__Microsoft: Warning
 
 
         ConnectionStrings__DefaultConnection: "Host=postgres-db;Port=5432;Database=TechChallengeGame;Username=postgres;Password=TechChallenge2024@"
@@ -61,9 +61,12 @@ services:
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
     volumes:
       - ./otelcol-config.yaml:/etc/otelcol/config.yaml:ro
-
+      - ./grafana/provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./grafana/provisioning/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
 
 volumes:
   postgres_data:

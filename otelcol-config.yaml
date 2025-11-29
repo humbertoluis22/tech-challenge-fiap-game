@@ -3,22 +3,39 @@ receivers:
     protocols:
       grpc:
       http:
+  hostmetrics:
+    collection_interval: 5s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      filesystem:
+      network:
+      load:
 
 exporters:
   debug: {}
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
+  
+  # --- ADICIONE ESTE BLOCO ---
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    # Isso abre a porta 8889 no container otel-lgtm para expor as métricas
+  # ---------------------------
 
 processors:
   batch: {}
   resourcedetection:
     detectors: [env, system, host, os]
+
 service:
   pipelines:
     metrics:
-      receivers: [otlp]
+      # Agora o 'prometheus' listado abaixo vai funcionar porque foi definido acima
+      receivers: [otlp, hostmetrics]
       processors: [batch]
-      exporters: [prometheus, debug]
+      exporters: [prometheus, debug] 
     traces:
       receivers: [otlp]
       processors: [batch]
@@ -26,4 +43,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [loki,debug]
+      exporters: [loki, debug]
