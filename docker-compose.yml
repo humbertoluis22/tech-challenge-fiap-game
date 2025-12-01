@@ -50,11 +50,6 @@ services:
 
         ConnectionStrings__DefaultConnection: "Host=postgres-db;Port=5432;Database=TechChallengeGame;Username=postgres;Password=TechChallenge2024@"
 
-        AWS_ACCESS_KEY_ID: "AKIATBCF4RO67QVFSZ4R"   
-        AWS_SECRET_ACCESS_KEY: "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"
-        AWS_REGION: "sa-east-1"
-
-
     #     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
     #     AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     #     AWS_REGION: ${AWS_REGION}
