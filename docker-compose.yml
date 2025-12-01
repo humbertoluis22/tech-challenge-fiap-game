@@ -17,6 +17,21 @@ services:
       timeout: 5s
       retries: 5
     
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
   api-tec-challenge: 
     container_name: api-tec-challenge-game
     build: .
@@ -27,11 +42,18 @@ services:
 
         OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-lgtm:4317"
 
+        Elasticsearch__Uri: http://elasticsearch:9200
+        Elasticsearch__ApiKey: # Deixe vazio pois desativamos a segurança
+
         Serilog__MinimumLevel__Default: Warning
         Serilog__MinimumLevel__Override__Microsoft: Warning
 
-
         ConnectionStrings__DefaultConnection: "Host=postgres-db;Port=5432;Database=TechChallengeGame;Username=postgres;Password=TechChallenge2024@"
+
+        AWS_ACCESS_KEY_ID: "AKIATBCF4RO67QVFSZ4R"   
+        AWS_SECRET_ACCESS_KEY: "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"
+        AWS_REGION: "sa-east-1"
+
 
     #     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
     #     AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}

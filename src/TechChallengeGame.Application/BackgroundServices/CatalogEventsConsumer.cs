@@ -43,7 +43,8 @@ namespace TechChallengeGame.Application.BackgroundServices
                 {
                     QueueUrl = _options.QueueUrl,
                     MaxNumberOfMessages = 5,
-                    WaitTimeSeconds = 10
+                    WaitTimeSeconds = 10,
+                    VisibilityTimeout = 5
                 };
 
                 try
@@ -92,6 +93,7 @@ namespace TechChallengeGame.Application.BackgroundServices
 
 
                 bool success = false;
+
                 switch (commandType)
                 {
                     case "create-purchase":
@@ -120,6 +122,11 @@ namespace TechChallengeGame.Application.BackgroundServices
                 if (success)
                 {
                     await DeleteMessageFromQueue(message.ReceiptHandle, stoppingToken);
+                    _logger.LogInformation("Mensagem {MessageId} processada e deletada.", message.MessageId);
+                }
+                else
+                {
+                    _logger.LogWarning("Mensagem {MessageId} falhou. Retornando para a fila (DLQ após max retries).", message.MessageId);
                 }
             }
             catch (JsonException jsonEx)
@@ -134,7 +141,9 @@ namespace TechChallengeGame.Application.BackgroundServices
 
         private async Task<bool> HandlePurchaseAsync(PaymentProcessedEvent paymentEvent, CancellationToken stoppingToken)
         {
-            // A lógica de compra que você já tinha
+            // Simula uma falha de banco de dados ou regra de negócio
+            // throw new Exception("Simulando erro para teste de DLQ!");
+
             bool allGamesAddedSuccessfully = true;
             foreach (var game in paymentEvent.Games)
             {
