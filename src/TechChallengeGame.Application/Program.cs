@@ -52,10 +52,7 @@ builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         // Instrumentação Manual (Registo da fonte criada acima)
         .AddSource(serviceName)
-        .AddOtlpExporter(opts =>
-        {
-            opts.Endpoint = new Uri("http://otel-lgtm:4317"); // Endpoint do container LGTM
-        }))
+        .AddOtlpExporter( ))
     .WithMetrics(metrics => metrics
         .SetResourceBuilder(appResourceBuilder)
         // Auto-instrumentação de métricas (Runtime, HTTP, etc.)
@@ -63,10 +60,7 @@ builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddRuntimeInstrumentation()
         .AddProcessInstrumentation()
-        .AddOtlpExporter(opts =>
-        {
-            opts.Endpoint = new Uri("http://otel-lgtm:4317");
-        }));
+        .AddOtlpExporter());
 
 
 builder

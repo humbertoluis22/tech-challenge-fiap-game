@@ -1,0 +1,35 @@
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:                           # Configura como o Tempo recebe dados
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"     # Escuta na porta 4317 interna
+        http:
+          endpoint: "0.0.0.0:4318"
+
+ingester:
+  max_block_duration: 5m               # Corta blocos a cada 5 min (bom para ver dados recentes rápido)
+  trace_idle_period: 30s
+
+compactor:
+  compaction:
+    compaction_window: 1h              # Compacta dados a cada hora
+    max_block_bytes: 100_000_000       # 100MB
+    block_retention: 1h
+    compacted_block_retention: 10m
+
+storage:
+  trace:
+    backend: local                     # Salva em disco (container)
+    block:
+      bloom_filter_false_positive: .05
+    wal:
+      path: /tmp/tempo/wal             # Write Ahead Log
+    local:
+      path: /tmp/tempo/blocks
+
+overrides:
+  metrics_generator_processors: [service-graphs, span-metrics] # Opcional: gera métricas a partir de traces
