@@ -105,8 +105,10 @@ spec:
             echo "PostgreSQL is ready!"
       containers:
       - name: game-api
-        image: 208452488125.dkr.ecr.sa-east-1.amazonaws.com/tech-challenge-fiap-game:latest
-        imagePullPolicy: Always
+        # image: 208452488125.dkr.ecr.sa-east-1.amazonaws.com/tech-challenge-fiap-game:latest 
+        image:  tech-challenge-game:local 
+        # imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent 
         ports:
         - containerPort: 80
           name: http

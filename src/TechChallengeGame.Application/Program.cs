@@ -117,35 +117,35 @@ builder.Services.AddScoped<IPromotionGameRepository, PromotionGameRepository>();
 builder.Services.AddScoped<IPromotionService, PromotionService>();
 builder.Services.AddScoped<IHistoryPaymentRepository, HistoryPaymentRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
-builder.Services.AddScoped<IQueuePublisher, SqsQueuePublisher>();
+// builder.Services.AddScoped<IQueuePublisher, SqsQueuePublisher>();
 
 builder.Services.AddSwaggerConfiguration();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddSingleton<IAmazonSQS>(sp =>
-{
-   var awsOptions = builder.Configuration.GetAWSOptions();
-   awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
-   return awsOptions.CreateServiceClient<IAmazonSQS>();
-});
+// builder.Services.AddSingleton<IAmazonSQS>(sp =>
+// {
+//    var awsOptions = builder.Configuration.GetAWSOptions();
+//    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
+//    return awsOptions.CreateServiceClient<IAmazonSQS>();
+// });
 
-builder.Services.AddSingleton(sp =>
-{
-   var awsOptions = builder.Configuration.GetAWSOptions();
-   awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
-   return awsOptions.CreateServiceClient<IAmazonSimpleNotificationService>();
-});
+// builder.Services.AddSingleton(sp =>
+// {
+//    var awsOptions = builder.Configuration.GetAWSOptions();
+//    awsOptions.Region = Amazon.RegionEndpoint.SAEast1;
+//    return awsOptions.CreateServiceClient<IAmazonSimpleNotificationService>();
+// });
 
-builder.Services.Configure<SnsPublisherOptions>(
-   builder.Configuration.GetSection(SnsPublisherOptions.SectionName)
-);
+// builder.Services.Configure<SnsPublisherOptions>(
+//    builder.Configuration.GetSection(SnsPublisherOptions.SectionName)
+// );
 
-builder.Services.Configure<SqsConsumerOptions>(
-   builder.Configuration.GetSection(SqsConsumerOptions.SectionName)
-);
+// builder.Services.Configure<SqsConsumerOptions>(
+//    builder.Configuration.GetSection(SqsConsumerOptions.SectionName)
+// );
 
-builder.Services.AddHostedService<CatalogEventsConsumer>();
+// builder.Services.AddHostedService<CatalogEventsConsumer>();
 
 builder.Services.AddApiVersioning(options =>
 {
