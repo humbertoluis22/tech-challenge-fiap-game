@@ -246,7 +246,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseJwtMiddleware();
+app.UseLogContext();
 
 app.UseApiConfig(app.Environment);
 

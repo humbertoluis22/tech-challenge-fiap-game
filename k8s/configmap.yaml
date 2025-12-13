@@ -31,11 +31,14 @@ data:
   Serilog__Enrich__1: "WithMachineName"
   Serilog__Enrich__2: "WithNewRelicLogsInContext"
   Serilog__WriteTo__0__Name: "Console"
-  Serilog__WriteTo__1__Name: "Elasticsearch"
-  Serilog__WriteTo__1__Args__nodeUris: "https://my-elasticsearch-project-ba9d4e.es.us-central1.gcp.elastic.cloud"
-  Serilog__WriteTo__1__Args__indexFormat: "tech-challenge-game-logs-{0:yyyy.MM.dd}"
-  Serilog__WriteTo__1__Args__autoRegisterTemplate: "true"
-  Serilog__WriteTo__1__Args__typeName: ""
+
+  # --- Configuração da Telemetria (Alterado aqui) ---
+  Serilog__WriteTo__1__Name: "OpenTelemetry"
+  Serilog__WriteTo__1__Args__endpoint: "http://otel-lgtm:4317"
+  Serilog__WriteTo__1__Args__protocol: "Grpc"
+  # Opcional: Se precisar definir o nome do serviço via env var específico para o sink
+  Serilog__WriteTo__1__Args__resourceAttributes__service.name: "tech-challenge-game-api"
+  Serilog__WriteTo__1__Args__resourceAttributes__service.version: "1.0.0"
   
   # Health Check Configuration
   HEALTHCHECKS_UI_ENABLED: "true"
