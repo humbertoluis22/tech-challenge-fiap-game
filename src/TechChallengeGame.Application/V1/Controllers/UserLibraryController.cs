@@ -33,18 +33,18 @@ public class UserLibraryController(
     [HttpGet()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Root<UserLibraryResponse>>> GetUserLibrary(Guid userId)  
+    public async Task<ActionResult<Root<UserLibraryResponse>>> GetUserLibrary()  
     {
-        //if (!HttpContext.IsAuthenticated())
-        //{
-        //    return Unauthorized(
-        //        new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
-        //    );
-        //}
+        if (!HttpContext.IsAuthenticated())
+        {
+           return Unauthorized(
+               new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
+           );
+        }
 
-        //// Extrair informa��es do JWT usando os extensions methods
-        //var userId_string = HttpContext.GetUserId();
-        //var userId = Guid.Parse(userId_string);
+        // Extrair informa��es do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
 
         logger.LogInformation("Obtendo biblioteca do usu�rio do banco de dados.");
         var userLibrary = await userLibraryRepository.FirstOrDefaultAsync(
@@ -70,18 +70,18 @@ public class UserLibraryController(
     [HttpPost()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Root<UserLibraryResponse>>> CreateALibraryForUser(Guid userId)
+    public async Task<ActionResult<Root<UserLibraryResponse>>> CreateALibraryForUser()
     {
-        //if (!HttpContext.IsAuthenticated())
-        //{
-        //    return Unauthorized(
-        //        new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
-        //    );
-        //}
+        if (!HttpContext.IsAuthenticated())
+        {
+           return Unauthorized(
+               new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
+           );
+        }
 
-        //// Extrair informa��es do JWT usando os extensions methods
-        //var userId_string = HttpContext.GetUserId();
-        //var userId = Guid.Parse(userId_string);
+        // Extrair informa��es do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
 
         logger.LogInformation("Criando biblioteca do usu�rio no banco de dados.");
         var userLibrary = UserLibrary.Create(userId);
@@ -105,19 +105,19 @@ public class UserLibraryController(
         AddGameToLibraryRequest resquest
     )
     {
-        //if (!HttpContext.IsAuthenticated())
-        //{
-        //    return Unauthorized(
-        //        new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
-        //    );
-        //}
+        if (!HttpContext.IsAuthenticated())
+        {
+           return Unauthorized(
+               new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
+           );
+        }
 
-        //// Extrair informa��es do JWT usando os extensions methods
-        //var userId_string = HttpContext.GetUserId();
-        //var userId = Guid.Parse(userId_string);
+        // Extrair informa��es do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
 
         logger.LogInformation("Adicionando jogo � biblioteca do usu�rio no banco de dados.");
-        var result = await userLibraryService.AddGameForUser(resquest.UserID, resquest.GameId);
+        var result = await userLibraryService.AddGameForUser(userId, resquest.GameId);
 
         if (result != null)
             return !result.Value
@@ -137,18 +137,18 @@ public class UserLibraryController(
     [HttpDelete()]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Root<UserLibraryResponse>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Root<UserLibraryResponse>>> RemoveGameFromLibrary(Guid userId,Guid gameId)
+    public async Task<ActionResult<Root<UserLibraryResponse>>> RemoveGameFromLibrary(Guid gameId)
     {
-        //if (!HttpContext.IsAuthenticated())
-        //{
-        //    return Unauthorized(
-        //        new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
-        //    );
-        //}
+        if (!HttpContext.IsAuthenticated())
+        {
+           return Unauthorized(
+               new { Message = "Token JWT v�lido � obrigat�rio para gerenciar usu�rios" }
+           );
+        }
 
-        //// Extrair informa��es do JWT usando os extensions methods
-        //var userId_string = HttpContext.GetUserId();
-        //var userId = Guid.Parse(userId_string);
+        // Extrair informa��es do JWT usando os extensions methods
+        var userId_string = HttpContext.GetUserId();
+        var userId = Guid.Parse(userId_string);
 
         logger.LogInformation("Removendo jogo da biblioteca do usu�rio no banco de dados.");
         var result = await userLibraryService.DeleteGameForUser(userId, gameId);

@@ -34,4 +34,4 @@ spec:
 
         type: Utilization
 
-        averageUtilization: 5 # Escalar se CPU passar de 50% do request
+        averageUtilization: 50 # Escalar se CPU passar de 50% do request
