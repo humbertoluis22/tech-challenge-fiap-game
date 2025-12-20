@@ -85,14 +85,6 @@ jobs:
         run: |
           echo "🚀 Verificando status do deploy..."
           
-          # Aguardar PostgreSQL estar pronto
-          echo "⏳ Aguardando PostgreSQL..."
-          kubectl wait --for=condition=ready pod -l app=postgres-db -n tech-challenge-game --timeout=300s
-          
-          # Aguardar API estar pronta
-          echo "⏳ Aguardando Game API..."
-          kubectl wait --for=condition=ready pod -l app=game-api -n tech-challenge-game --timeout=300s
-          
           # Verificar status final
           echo "📊 Status dos recursos:"
           kubectl get pods -n tech-challenge-game -o wide
