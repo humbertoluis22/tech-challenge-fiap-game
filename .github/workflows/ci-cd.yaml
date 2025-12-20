@@ -9,7 +9,7 @@ on:
 
 env:
   ECR_REPOSITORY: tech-challenge-fiap-game
-  EKS_CLUSTER_NAME: fcg-identity
+  EKS_CLUSTER_NAME: fcg-identity-cluster
   AWS_REGION: sa-east-1
 
 jobs:
@@ -73,12 +73,12 @@ jobs:
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
           kubectl apply -f k8s/secrets.yaml
-          kubectl apply -f k8s/newrelic-secrets.yaml
           kubectl apply -f k8s/postgres-pvc.yaml
           kubectl apply -f k8s/kong-plugins.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/hpa.yaml
 
       - name: Verify Deployment
         run: |
@@ -104,7 +104,7 @@ jobs:
           
           # Teste básico de conectividade via Kong Ingress Controller
           echo "🧪 Testando Kong Ingress Controller:"
-          echo "URL: http://ad503a7a288a449fe89c26e294b463bc-ba83c33ddc3d99fe.elb.sa-east-1.amazonaws.com/games/health"
+          echo "URL: http://a62a576cdc3754592a5d8ef2add25436-9dc9a6ade9f9ca9f.elb.sa-east-1.amazonaws.com/games/health"
           echo "Host: tech-challenge-game.fcg-identity.com"
           
           echo "✅ Deploy concluído com sucesso!"

@@ -10,8 +10,8 @@ data:
   DOTNET_RUNNING_IN_CONTAINER: "true"
   
   # Elasticsearch Configuration
-  Elasticsearch__Uri: "https://my-elasticsearch-project-ba9d4e.es.us-central1.gcp.elastic.cloud"
-  Elasticsearch__Id: "my-elasticsearch-project-ba9d4e"
+  Elasticsearch__Uri: "https://my-elasticsearch-project-fdc740.es.us-east-1.aws.elastic.cloud/"
+  Elasticsearch__Id: "my-elasticsearch-project-fdc740"
   
   # AWS SQS/SNS Configuration
   SqsConsumer__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/catalog-events-queue"
@@ -21,7 +21,6 @@ data:
   # Serilog Configuration
   Serilog__Using__0: "Serilog.Sinks.Console"
   Serilog__Using__1: "Serilog.Sinks.Elasticsearch"
-  Serilog__Using__2: "NewRelic.LogEnrichers.Serilog"
   Serilog__MinimumLevel__Default: "Warning"
   Serilog__MinimumLevel__Override__Microsoft: "Warning"
   Serilog__MinimumLevel__Override__System: "Warning"
@@ -29,12 +28,11 @@ data:
   Serilog__Properties__ServiceName: "fcg-catalog-service"
   Serilog__Enrich__0: "FromLogContext"
   Serilog__Enrich__1: "WithMachineName"
-  Serilog__Enrich__2: "WithNewRelicLogsInContext"
   Serilog__WriteTo__0__Name: "Console"
 
   # --- Configuração da Telemetria (Alterado aqui) ---
   Serilog__WriteTo__1__Name: "OpenTelemetry"
-  Serilog__WriteTo__1__Args__endpoint: "http://otel-collector-service.identity-system:4317"
+  Serilog__WriteTo__1__Args__endpoint: "http://otel-collector.identity-system.svc.cluster.local:4317/"
   Serilog__WriteTo__1__Args__protocol: "Grpc"
   # Opcional: Se precisar definir o nome do serviço via env var específico para o sink
   Serilog__WriteTo__1__Args__resourceAttributes__service.name: "fcg-game-api"
