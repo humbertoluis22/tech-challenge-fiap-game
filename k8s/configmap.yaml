@@ -15,9 +15,9 @@ data:
   
   # AWS SQS/SNS Configuration
   SqsConsumer__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/catalog-events-queue"
-  SnsPublisher__TopicArn: "arn:aws:sns:sa-east-1:208452488125:fcg-events"
-  SqsPublisher__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/payment-events-queue"
-  
+  SnsPublisher__TopicArn: "arn:aws:sns:sa-east-1:208452488125:payment-topic"
+  SqsPublisher__QueueUrl: "https://sqs.sa-east-1.amazonaws.com/208452488125/purchase-queue"
+
   # Serilog Configuration
   Serilog__Using__0: "Serilog.Sinks.Console"
   Serilog__Using__1: "Serilog.Sinks.Elasticsearch"
