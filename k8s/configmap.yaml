@@ -32,7 +32,7 @@ data:
 
   # --- Configuração da Telemetria (Alterado aqui) ---
   Serilog__WriteTo__1__Name: "OpenTelemetry"
-  Serilog__WriteTo__1__Args__endpoint: "http://otel-collector.identity-system.svc.cluster.local:4317/"
+  Serilog__WriteTo__1__Args__endpoint: "http://otel-collector-service.identity-system.svc.cluster.local:4317"
   Serilog__WriteTo__1__Args__protocol: "Grpc"
   # Opcional: Se precisar definir o nome do serviço via env var específico para o sink
   Serilog__WriteTo__1__Args__resourceAttributes__service.name: "fcg-game-api"
